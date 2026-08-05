@@ -1,3 +1,4 @@
+import "./episode-intro.js";
 import { QUESTIONS } from "./questions.js";
 
 const AI_ENDPOINT = "https://quiz-duelo-ai.gustavomarsan.workers.dev/";
@@ -102,6 +103,6 @@ function setLoadingState(isLoading) {
 
   startButton.disabled = isLoading;
   startButton.textContent = isLoading
-    ? "Criando perguntas absurdamente importantes..."
+    ? "Criando descobertas absurdamente importantes..."
     : originalButtonText;
 }
