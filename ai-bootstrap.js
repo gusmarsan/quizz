@@ -1,4 +1,5 @@
 import "./episode-intro.js";
+import "./episode-sync.js";
 import { QUESTIONS } from "./questions.js";
 
 const AI_ENDPOINT = "https://quiz-duelo-ai.gustavomarsan.workers.dev/";
