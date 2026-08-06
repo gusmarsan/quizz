@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#113d96" />
-  <title>Quiz de Duelo</title>
-  <link rel="stylesheet" href="styles.css?v=1.85" />
+  <title>Burrquizzz</title>
+  <link rel="stylesheet" href="styles.css?v=1.9" />
+  <link rel="stylesheet" href="visual-polish.css?v=1.9" />
   <style>
     #burrAppVersion {
       position: fixed;
@@ -16,15 +17,15 @@
       border: 1px solid rgba(255,255,255,.22);
       border-radius: 999px;
       background: rgba(7,24,65,.58);
-      color: rgba(255,255,255,.72);
-      font: 800 .62rem/1 system-ui, sans-serif;
+      color: rgba(255,255,255,.76);
+      font: 800 .6875rem/1 system-ui, sans-serif;
       letter-spacing: .05em;
-      box-shadow: 0 4px 14px rgba(0,0,0,.12);
+      box-shadow: 0 4px 12px rgba(0,0,0,.1);
       backdrop-filter: blur(8px);
       pointer-events: none;
     }
     @media (max-width: 520px) {
-      #burrAppVersion { right: 7px; bottom: 6px; opacity: .72; }
+      #burrAppVersion { right: 7px; bottom: 6px; opacity: .76; }
     }
   </style>
 </head>
@@ -32,8 +33,8 @@
   <main class="app-shell">
     <header class="topbar">
       <button id="homeButton" class="brand" type="button" aria-label="Voltar ao início">
-        <span class="brand-mark">Q</span>
-        <span class="brand-text">Quiz de Duelo</span>
+        <span class="brand-mark">B</span>
+        <span class="brand-text">Burrquizzz</span>
       </button>
       <button id="firebaseButton" class="ghost-button small" type="button">Configurar online</button>
     </header>
@@ -118,7 +119,7 @@
         <div class="question-meta"><span id="questionCategory" class="category-chip">Cultura pop</span><span id="questionType" class="type-chip">Escolha</span></div>
         <h2 id="questionText">Pergunta</h2>
         <p id="questionSupport" class="question-support hidden"></p>
-        <div id="questionImageWrap" class="question-image-wrap hidden"><img id="questionImage" alt="" /></div>
+        <div id="questionImageWrap" class="question-image-wrap hidden"><img id="questionImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="" loading="lazy" /></div>
         <div id="answersArea"></div>
       </article>
       <div id="feedbackBanner" class="feedback-banner" aria-live="polite"></div>
@@ -150,9 +151,9 @@
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <div id="burrAppVersion" title="Burrquizzz versão 1.85" aria-label="Versão 1.85">v1.85</div>
-  <script type="module" src="ai-bootstrap.js?v=1.85"></script>
-  <script type="module" src="online-runtime.js?v=1.85"></script>
-  <script type="module" src="app.js?v=1.85"></script>
+  <div id="burrAppVersion" title="Burrquizzz versão 1.9" aria-label="Versão 1.9">v1.9</div>
+  <script type="module" src="ai-bootstrap.js?v=1.9"></script>
+  <script type="module" src="online-runtime.js?v=1.9"></script>
+  <script type="module" src="app.js?v=1.9"></script>
 </body>
 </html>
