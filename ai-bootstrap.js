@@ -1,3 +1,4 @@
+import "./quality-runtime.js";
 import "./episode-intro.js";
 import "./episode-sync.js";
 import "./block-runtime.js";
@@ -10,7 +11,7 @@ const EPISODE_STORAGE_KEY = "burrquizzzCurrentEpisode";
 const NEXT_EPISODE_STORAGE_KEY = "burrquizzzNextEpisode";
 const NEXT_EPISODE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 const AI_QUESTION_COUNT = 16;
-const MAX_RECENT_QUESTIONS = 50;
+const MAX_RECENT_QUESTIONS = 200;
 
 const startButton = document.querySelector("#startSoloButton");
 const gameScreen = document.querySelector("#screen-game");
