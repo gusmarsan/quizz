@@ -5,3 +5,5 @@ import "./episode-sync.js";
 import "./block-runtime.js";
 import "./episode-migration.js";
 import "./episode-engine.js";
+import "./rarity-runtime.js";
+import "./version-runtime.js";
