@@ -1,10 +1,10 @@
 import "./quality-runtime.js";
 import "./question-hotfixes.js";
-import "./freshness-guard.js?v=1.9";
+import "./freshness-guard.js?v=2.0";
 import "./episode-intro.js";
 import "./episode-sync.js";
-import "./block-runtime.js?v=1.9";
+import "./block-runtime.js?v=2.0";
 import "./episode-migration.js";
-import "./episode-engine.js";
+import "./definitive-episode-engine.js?v=2.0";
 import "./rarity-runtime.js";
-import "./version-runtime.js?v=1.9";
+import "./version-runtime.js?v=2.0";
