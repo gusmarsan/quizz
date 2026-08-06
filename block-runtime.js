@@ -104,12 +104,13 @@ function renderProgress(block, blockPosition, isFinal) {
 
   const blockNumber = Math.floor(currentIndex / 4) + 1;
   const percentage = ((currentIndex + 1) / questions.length) * 100;
+  const progressScale = Math.min(1, Math.max(0, percentage / 100));
   progress.innerHTML = `
     <div class="burr-block-progress-copy">
       <strong>${isFinal ? "⭐ Grande Final" : escapeHtml(block.title)}</strong>
       <span>Bloco ${blockNumber}/4 · ${blockPosition + 1}/4</span>
     </div>
-    <div class="burr-episode-track"><span style="width:${percentage}%"></span></div>
+    <div class="burr-episode-track"><span style="transform:scaleX(${progressScale})"></span></div>
   `;
 }
 
@@ -293,16 +294,16 @@ function createTransition() {
     .burr-block-progress-copy strong { text-transform:uppercase; letter-spacing:.06em; }
     .burr-block-progress-copy span { opacity:.7; white-space:nowrap; }
     .burr-episode-track { height:7px; overflow:hidden; border-radius:999px; background:rgba(17,61,150,.12); }
-    .burr-episode-track span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#143f99,#7b2aa8,#ff4778); transition:width .35s ease; }
-    .question-card.burr-grand-final { outline:3px solid #ffcc33; box-shadow:0 18px 50px rgba(255,183,0,.22); }
+    .burr-episode-track span { display:block; width:100%; height:100%; border-radius:inherit; background:linear-gradient(90deg,#143f99,#7b2aa8,#ff4778); transform-origin:left center; transition:transform .35s ease; }
+    .question-card.burr-grand-final { outline:2px solid #ffcc33; box-shadow:0 16px 36px rgba(255,183,0,.18); }
     .question-card.burr-grand-final .category-chip { background:#ffcc33; color:#281700; }
     .burr-block-transition { position:fixed; inset:0; z-index:12000; display:grid; place-items:center; padding:24px; background:radial-gradient(circle at 20% 20%,rgba(255,211,61,.27),transparent 35%),linear-gradient(145deg,#071b4d,#173f96 55%,#76248e); color:#fff; opacity:0; transition:opacity .22s ease; }
     .burr-block-transition[hidden] { display:none; }
     .burr-block-transition.visible { opacity:1; }
-    .burr-block-transition-card { width:min(100%,620px); text-align:center; padding:42px 30px; border:3px solid rgba(255,255,255,.88); border-radius:32px; background:rgba(5,20,60,.72); box-shadow:0 30px 90px rgba(0,0,0,.38); transform:scale(.94); transition:transform .28s ease; }
+    .burr-block-transition-card { width:min(100%,620px); text-align:center; padding:42px 30px; border:2px solid rgba(255,255,255,.88); border-radius:32px; background:rgba(5,20,60,.72); box-shadow:0 24px 58px rgba(0,0,0,.28); transform:scale(.94); transition:transform .28s ease; }
     .burr-block-transition.visible .burr-block-transition-card { transform:scale(1); }
     #burrBlockLabel { margin:0 0 14px; color:#ffdb55; font-weight:900; font-size:.78rem; letter-spacing:.18em; }
-    #burrBlockTitle { margin:0; font-size:clamp(2.3rem,9vw,4.7rem); line-height:.95; letter-spacing:-.05em; }
+    #burrBlockTitle { margin:0; font-size:clamp(2.3rem,9vw,4.7rem); line-height:.95; letter-spacing:-.035em; }
     #burrBlockIntro { max-width:470px; margin:22px auto; font-size:1.08rem; line-height:1.5; color:rgba(255,255,255,.88); }
     #burrBlockNext { font-weight:800; text-transform:uppercase; letter-spacing:.1em; opacity:.65; }
   `;
