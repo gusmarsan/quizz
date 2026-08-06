@@ -1,4 +1,5 @@
 import "./quality-runtime.js";
+import "./question-hotfixes.js";
 import "./episode-intro.js";
 import "./episode-sync.js";
 import "./block-runtime.js";
