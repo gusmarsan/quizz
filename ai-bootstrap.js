@@ -3,6 +3,7 @@ import "./episode-sync.js";
 import { QUESTIONS } from "./questions.js";
 
 const AI_ENDPOINT = "https://quiz-duelo-ai.gustavomarsan.workers.dev/";
+const MEDIA_MANIFEST_URL = "./assets/media/manifest.json";
 const RECENT_STORAGE_KEY = "quizDuelRecentAIQuestions";
 const EPISODE_STORAGE_KEY = "burrquizzzCurrentEpisode";
 const AI_QUESTION_COUNT = 20;
@@ -17,11 +18,19 @@ async function prepareAIQuestions() {
   setLoadingState(true);
 
   try {
-    const recentQuestions = getRecentQuestions();
+    const [recentQuestions, mediaItems] = await Promise.all([
+      Promise.resolve(getRecentQuestions()),
+      loadMediaItems()
+    ]);
+
     const response = await fetch(AI_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ count: AI_QUESTION_COUNT, recentQuestions })
+      body: JSON.stringify({
+        count: AI_QUESTION_COUNT,
+        recentQuestions,
+        mediaItems
+      })
     });
 
     if (!response.ok) throw new Error(`O gerador respondeu com status ${response.status}.`);
@@ -39,6 +48,9 @@ async function prepareAIQuestions() {
     saveRecentQuestions(generatedQuestions.map((question) => question.prompt));
     saveEpisode(normalizedEpisode);
     document.documentElement.dataset.questionSource = "ai";
+    document.documentElement.dataset.visualDiscoveries = String(
+      generatedQuestions.filter((question) => question.type === "image_choice").length
+    );
     window.dispatchEvent(new CustomEvent("burrquizzz:episode-ready", { detail: normalizedEpisode }));
   } catch (error) {
     console.warn("Não foi possível carregar o episódio da IA. O banco local será usado.", error);
@@ -46,6 +58,35 @@ async function prepareAIQuestions() {
     document.documentElement.dataset.questionSource = "local";
   } finally {
     setLoadingState(false);
+  }
+}
+
+async function loadMediaItems() {
+  try {
+    const response = await fetch(`${MEDIA_MANIFEST_URL}?v=1`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Catálogo de mídia indisponível: ${response.status}`);
+    const manifest = await response.json();
+    if (!Array.isArray(manifest?.items)) return [];
+
+    return manifest.items
+      .filter((item) => item?.status === "ready" && item?.type === "image")
+      .map((item) => ({
+        id: String(item.id || "").trim(),
+        type: "image",
+        status: "ready",
+        universe: String(item.universe || "Isso Existiu").trim(),
+        title: String(item.title || "").trim(),
+        subject: String(item.subject || "").trim(),
+        imageUrl: String(item.imageUrl || "").trim(),
+        sourcePage: String(item.sourcePage || "").trim(),
+        credit: String(item.credit || "").trim(),
+        tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
+        questionSeeds: Array.isArray(item.questionSeeds) ? item.questionSeeds.map(String) : []
+      }))
+      .filter((item) => item.id && item.title && item.imageUrl);
+  } catch (error) {
+    console.warn("O catálogo de imagens não pôde ser carregado. O episódio seguirá apenas com texto.", error);
+    return [];
   }
 }
 
@@ -87,17 +128,27 @@ function validateQuestions(items) {
       item.correctIndex >= 0 &&
       item.correctIndex <= 3
     ))
-    .map((item, index) => ({
-      id: item.id || `ai-${Date.now()}-${index}`,
-      type: "multiple_choice",
-      category: item.category.trim() || "Mundo Bizarro",
-      difficulty: ["facil", "media", "dificil"].includes(item.difficulty) ? item.difficulty : "media",
-      prompt: item.prompt.trim(),
-      options: item.options.map((option) => String(option).trim()),
-      correctIndex: item.correctIndex,
-      explanation: typeof item.explanation === "string" ? item.explanation.trim() : "",
-      tone: "burrquizzz"
-    }));
+    .map((item, index) => {
+      const isImage = item.type === "image_choice" && typeof item.image === "string" && item.image.trim();
+      return {
+        id: item.id || `ai-${Date.now()}-${index}`,
+        type: isImage ? "image_choice" : "multiple_choice",
+        category: item.category.trim() || "Mundo Bizarro",
+        difficulty: ["facil", "media", "dificil"].includes(item.difficulty) ? item.difficulty : "media",
+        prompt: item.prompt.trim(),
+        options: item.options.map((option) => String(option).trim()),
+        correctIndex: item.correctIndex,
+        explanation: typeof item.explanation === "string" ? item.explanation.trim() : "",
+        tone: "burrquizzz",
+        ...(isImage ? {
+          mediaId: String(item.mediaId || "").trim(),
+          image: item.image.trim(),
+          imageCredit: String(item.imageCredit || "").trim(),
+          imageSource: String(item.imageSource || "").trim(),
+          supportText: String(item.supportText || item.imageCredit || "").trim()
+        } : {})
+      };
+    });
 }
 
 function getRecentQuestions() {
