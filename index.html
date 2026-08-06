@@ -5,155 +5,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#113d96" />
   <title>Burrquizzz</title>
-  <link rel="stylesheet" href="styles.css?v=1.9" />
-  <link rel="stylesheet" href="visual-polish.css?v=1.9" />
+  <link rel="stylesheet" href="styles.css?v=2.0" />
+  <link rel="stylesheet" href="visual-polish.css?v=2.0" />
   <style>
-    #burrAppVersion {
-      position: fixed;
-      right: 10px;
-      bottom: 8px;
-      z-index: 16000;
-      padding: 4px 7px;
-      border: 1px solid rgba(255,255,255,.22);
-      border-radius: 999px;
-      background: rgba(7,24,65,.58);
-      color: rgba(255,255,255,.76);
-      font: 800 .6875rem/1 system-ui, sans-serif;
-      letter-spacing: .05em;
-      box-shadow: 0 4px 12px rgba(0,0,0,.1);
-      backdrop-filter: blur(8px);
-      pointer-events: none;
-    }
-    @media (max-width: 520px) {
-      #burrAppVersion { right: 7px; bottom: 6px; opacity: .76; }
-    }
+    #burrAppVersion { position:fixed; right:10px; bottom:8px; z-index:16000; padding:4px 7px; border:1px solid rgba(255,255,255,.22); border-radius:999px; background:rgba(7,24,65,.58); color:rgba(255,255,255,.76); font:800 .6875rem/1 system-ui,sans-serif; letter-spacing:.05em; box-shadow:0 4px 12px rgba(0,0,0,.1); backdrop-filter:blur(8px); pointer-events:none; }
+    @media (max-width:520px) { #burrAppVersion { right:7px; bottom:6px; opacity:.76; } }
   </style>
 </head>
 <body>
   <main class="app-shell">
     <header class="topbar">
-      <button id="homeButton" class="brand" type="button" aria-label="Voltar ao início">
-        <span class="brand-mark">B</span>
-        <span class="brand-text">Burrquizzz</span>
-      </button>
+      <button id="homeButton" class="brand" type="button" aria-label="Voltar ao início"><span class="brand-mark">B</span><span class="brand-text">Burrquizzz</span></button>
       <button id="firebaseButton" class="ghost-button small" type="button">Configurar online</button>
     </header>
 
     <section id="screen-home" class="screen active">
-      <div class="hero">
-        <p class="eyebrow">Game show de curiosidades esquisitas + cultura pop + nostalgia + humor</p>
-        <h1>Vale saber.<br>Vale rir.<br>Vale ganhar.</h1>
-        <p class="hero-copy">Jogue sozinho ou crie uma sala para disputar em dois celulares com as mesmas perguntas, ao mesmo tempo.</p>
-      </div>
+      <div class="hero"><p class="eyebrow">Game show de curiosidades esquisitas + cultura pop + nostalgia + humor</p><h1>Vale saber.<br>Vale rir.<br>Vale ganhar.</h1><p class="hero-copy">Jogue sozinho ou crie uma sala para disputar em dois celulares com as mesmas perguntas, ao mesmo tempo.</p></div>
       <div class="mode-grid">
-        <button id="soloModeButton" class="mode-card" type="button">
-          <span class="mode-icon">1</span>
-          <span class="mode-title">Jogar sozinho</span>
-          <span class="mode-copy">Teste o jogo e conheça as perguntas estranhas antes do duelo.</span>
-        </button>
-        <button id="onlineModeButton" class="mode-card alt" type="button">
-          <span class="mode-icon">2</span>
-          <span class="mode-title">Duelo online</span>
-          <span class="mode-copy">Crie uma sala, compartilhe o código e veja quem sabe mais.</span>
-        </button>
+        <button id="soloModeButton" class="mode-card" type="button"><span class="mode-icon">1</span><span class="mode-title">Jogar sozinho</span><span class="mode-copy">Teste o jogo e conheça as perguntas estranhas antes do duelo.</span></button>
+        <button id="onlineModeButton" class="mode-card alt" type="button"><span class="mode-icon">2</span><span class="mode-title">Duelo online</span><span class="mode-copy">Crie uma sala, compartilhe o código e veja quem sabe mais.</span></button>
       </div>
-      <div class="home-features">
-        <span>100 perguntas iniciais</span>
-        <span>4 formatos de desafio</span>
-        <span>Solo ou online</span>
-      </div>
+      <div class="home-features"><span>Histórico antirrepetição</span><span>4 formatos de desafio</span><span>Solo ou online</span></div>
     </section>
 
     <section id="screen-solo-setup" class="screen">
       <button class="back-link" data-go-home type="button">← Voltar</button>
-      <div class="panel compact">
-        <p class="eyebrow">Modo solo</p>
-        <h2>Monte a rodada</h2>
-        <label class="field"><span>Seu nome</span><input id="soloName" maxlength="18" placeholder="Ex.: Gustavo" autocomplete="nickname" /></label>
-        <fieldset class="field"><legend>Quantidade de perguntas</legend><div class="segmented"><label><input type="radio" name="soloCount" value="10" checked /><span>10</span></label><label><input type="radio" name="soloCount" value="15" /><span>15</span></label><label><input type="radio" name="soloCount" value="20" /><span>20</span></label></div></fieldset>
-        <button id="startSoloButton" class="primary-button" type="button">Começar</button>
-      </div>
+      <div class="panel compact"><p class="eyebrow">Modo solo</p><h2>Monte a rodada</h2><label class="field"><span>Seu nome</span><input id="soloName" maxlength="18" placeholder="Ex.: Gustavo" autocomplete="nickname" /></label><fieldset class="field"><legend>Quantidade de perguntas</legend><div class="segmented"><label><input type="radio" name="soloCount" value="10" checked /><span>10</span></label><label><input type="radio" name="soloCount" value="15" /><span>15</span></label><label><input type="radio" name="soloCount" value="16" /><span>16</span></label></div></fieldset><button id="startSoloButton" class="primary-button" type="button">Começar</button></div>
     </section>
 
     <section id="screen-online-menu" class="screen">
       <button class="back-link" data-go-home type="button">← Voltar</button>
-      <div class="panel compact">
-        <p class="eyebrow">Duelo online</p>
-        <h2>Entre na disputa</h2>
-        <label class="field"><span>Seu nome</span><input id="onlineName" maxlength="18" placeholder="Ex.: Gustavo" autocomplete="nickname" /></label>
-        <div class="online-actions">
-          <button id="createRoomButton" class="primary-button" type="button">Criar sala</button>
-          <div class="divider"><span>ou</span></div>
-          <label class="field"><span>Código da sala</span><input id="roomCodeInput" class="room-input" maxlength="6" placeholder="ABC123" autocomplete="off" /></label>
-          <button id="joinRoomButton" class="secondary-button" type="button">Entrar na sala</button>
-        </div>
-      </div>
+      <div class="panel compact"><p class="eyebrow">Duelo online</p><h2>Entre na disputa</h2><label class="field"><span>Seu nome</span><input id="onlineName" maxlength="18" placeholder="Ex.: Gustavo" autocomplete="nickname" /></label><div class="online-actions"><button id="createRoomButton" class="primary-button" type="button">Criar sala</button><div class="divider"><span>ou</span></div><label class="field"><span>Código da sala</span><input id="roomCodeInput" class="room-input" maxlength="6" placeholder="ABC123" autocomplete="off" /></label><button id="joinRoomButton" class="secondary-button" type="button">Entrar na sala</button></div></div>
     </section>
 
     <section id="screen-lobby" class="screen">
       <button id="leaveRoomButton" class="back-link" type="button">← Sair da sala</button>
-      <div class="panel lobby-panel">
-        <p class="eyebrow">Sala pronta</p>
-        <h2>Convide quem vai perder</h2>
-        <button id="copyRoomCodeButton" class="room-code-card" type="button" title="Copiar código"><span>Código da sala</span><strong id="lobbyRoomCode">------</strong><small>Toque para copiar</small></button>
-        <div class="players-list">
-          <div class="player-slot"><span class="status-dot online"></span><div><small>Jogador 1</small><strong id="playerOneName">Aguardando...</strong></div></div>
-          <div class="player-slot"><span id="playerTwoDot" class="status-dot"></span><div><small>Jogador 2</small><strong id="playerTwoName">Aguardando...</strong></div></div>
-        </div>
-        <label class="field" id="duelCountField"><span>Quantidade de perguntas</span><select id="duelCount"><option value="10">10 perguntas</option><option value="15" selected>15 perguntas</option><option value="20">20 perguntas</option></select></label>
-        <button id="startDuelButton" class="primary-button" type="button" disabled>Aguardando adversário</button>
-        <p id="lobbyHint" class="hint">Abra o jogo em outro navegador, celular ou aba anônima para testar.</p>
-      </div>
+      <div class="panel lobby-panel"><p class="eyebrow">Sala pronta</p><h2>Convide quem vai perder</h2><button id="copyRoomCodeButton" class="room-code-card" type="button" title="Copiar código"><span>Código da sala</span><strong id="lobbyRoomCode">------</strong><small>Toque para copiar</small></button><div class="players-list"><div class="player-slot"><span class="status-dot online"></span><div><small>Jogador 1</small><strong id="playerOneName">Aguardando...</strong></div></div><div class="player-slot"><span id="playerTwoDot" class="status-dot"></span><div><small>Jogador 2</small><strong id="playerTwoName">Aguardando...</strong></div></div></div><label class="field" id="duelCountField"><span>Quantidade de perguntas</span><select id="duelCount"><option value="10">10 perguntas</option><option value="15" selected>15 perguntas</option><option value="16">16 perguntas</option></select></label><button id="startDuelButton" class="primary-button" type="button" disabled>Aguardando adversário</button><p id="lobbyHint" class="hint">Abra o jogo em outro navegador, celular ou aba anônima para testar.</p></div>
     </section>
 
     <section id="screen-countdown" class="screen centered"><p class="eyebrow">Prepare-se</p><div id="countdownValue" class="countdown">3</div><p id="countdownMessage">A rodada vai começar</p></section>
 
     <section id="screen-game" class="screen">
-      <div class="game-header">
-        <div class="score-chip"><small>PERGUNTA</small><strong><span id="questionNumber">1</span>/<span id="questionTotal">10</span></strong></div>
-        <div id="opponentBadge" class="opponent-badge hidden"><span class="status-dot online"></span><span id="opponentName">Adversário</span></div>
-        <div class="score-chip"><small>ACERTOS</small><strong id="currentScore">0</strong></div>
-      </div>
+      <div class="game-header"><div class="score-chip"><small>PERGUNTA</small><strong><span id="questionNumber">1</span>/<span id="questionTotal">10</span></strong></div><div id="opponentBadge" class="opponent-badge hidden"><span class="status-dot online"></span><span id="opponentName">Adversário</span></div><div class="score-chip"><small>ACERTOS</small><strong id="currentScore">0</strong></div></div>
       <div class="timer-track" aria-label="Tempo restante"><div id="timerBar" class="timer-bar"></div></div>
-      <article class="question-card">
-        <div class="question-meta"><span id="questionCategory" class="category-chip">Cultura pop</span><span id="questionType" class="type-chip">Escolha</span></div>
-        <h2 id="questionText">Pergunta</h2>
-        <p id="questionSupport" class="question-support hidden"></p>
-        <div id="questionImageWrap" class="question-image-wrap hidden"><img id="questionImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="" loading="lazy" /></div>
-        <div id="answersArea"></div>
-      </article>
+      <article class="question-card"><div class="question-meta"><span id="questionCategory" class="category-chip">Cultura pop</span><span id="questionType" class="type-chip">Escolha</span></div><h2 id="questionText">Pergunta</h2><p id="questionSupport" class="question-support hidden"></p><div id="questionImageWrap" class="question-image-wrap hidden"><img id="questionImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="" loading="lazy" /></div><div id="answersArea"></div></article>
       <div id="feedbackBanner" class="feedback-banner" aria-live="polite"></div>
     </section>
 
     <section id="screen-results" class="screen">
-      <div class="panel results-panel">
-        <p id="resultEyebrow" class="eyebrow">Resultado</p>
-        <h2 id="resultTitle">Fim de jogo</h2>
-        <p id="resultSubtitle" class="result-subtitle"></p>
-        <div id="duelScoreboard" class="scoreboard hidden"><div id="scorePlayerOne" class="score-row"></div><div id="scorePlayerTwo" class="score-row"></div></div>
-        <div id="soloStats" class="stats-grid"><div><small>Acertos</small><strong id="resultCorrect">0/0</strong></div><div><small>Tempo médio</small><strong id="resultAverage">0s</strong></div></div>
-        <button id="playAgainButton" class="primary-button" type="button">Jogar novamente</button>
-        <button id="resultsHomeButton" class="ghost-button" type="button">Voltar ao início</button>
-      </div>
+      <div class="panel results-panel"><p id="resultEyebrow" class="eyebrow">Resultado</p><h2 id="resultTitle">Fim de jogo</h2><p id="resultSubtitle" class="result-subtitle"></p><div id="duelScoreboard" class="scoreboard hidden"><div id="scorePlayerOne" class="score-row"></div><div id="scorePlayerTwo" class="score-row"></div></div><div id="soloStats" class="stats-grid"><div><small>Acertos</small><strong id="resultCorrect">0/0</strong></div><div><small>Tempo médio</small><strong id="resultAverage">0s</strong></div></div><button id="playAgainButton" class="primary-button" type="button">Jogar novamente</button><button id="resultsHomeButton" class="ghost-button" type="button">Voltar ao início</button></div>
     </section>
   </main>
 
-  <dialog id="firebaseDialog">
-    <form method="dialog" class="dialog-card">
-      <button class="dialog-close" value="cancel" aria-label="Fechar">×</button>
-      <p class="eyebrow">Duelo online</p>
-      <h2>Configurar Firebase</h2>
-      <p class="dialog-copy">Cole o objeto <code>firebaseConfig</code> do seu projeto. Ele fica salvo só neste navegador.</p>
-      <label class="field"><span>Configuração</span><textarea id="firebaseConfigInput" rows="10" spellcheck="false" placeholder='{"apiKey":"...","authDomain":"...","databaseURL":"...","projectId":"...","appId":"..."}'></textarea></label>
-      <p id="firebaseStatus" class="hint"></p>
-      <button id="saveFirebaseButton" class="primary-button" value="cancel" type="button">Salvar configuração</button>
-      <button id="clearFirebaseButton" class="ghost-button danger" value="cancel" type="button">Apagar configuração</button>
-    </form>
-  </dialog>
+  <dialog id="firebaseDialog"><form method="dialog" class="dialog-card"><button class="dialog-close" value="cancel" aria-label="Fechar">×</button><p class="eyebrow">Duelo online</p><h2>Configurar Firebase</h2><p class="dialog-copy">Cole o objeto <code>firebaseConfig</code> do seu projeto. Ele fica salvo só neste navegador.</p><label class="field"><span>Configuração</span><textarea id="firebaseConfigInput" rows="10" spellcheck="false" placeholder='{"apiKey":"...","authDomain":"...","databaseURL":"...","projectId":"...","appId":"..."}'></textarea></label><p id="firebaseStatus" class="hint"></p><button id="saveFirebaseButton" class="primary-button" value="cancel" type="button">Salvar configuração</button><button id="clearFirebaseButton" class="ghost-button danger" value="cancel" type="button">Apagar configuração</button></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <div id="burrAppVersion" title="Burrquizzz versão 1.9" aria-label="Versão 1.9">v1.9</div>
-  <script type="module" src="ai-bootstrap.js?v=1.9"></script>
-  <script type="module" src="online-runtime.js?v=1.9"></script>
-  <script type="module" src="app.js?v=1.9"></script>
+  <div id="burrAppVersion" title="Burrquizzz versão 2.0" aria-label="Versão 2.0">v2.0</div>
+  <script type="module" src="ai-bootstrap.js?v=2.0"></script>
+  <script type="module" src="online-runtime.js?v=2.0"></script>
+  <script type="module" src="app.js?v=2.0"></script>
 </body>
 </html>
