@@ -1,4 +1,7 @@
 const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
+const DISCOVERIES_PER_BLOCK = 4;
+const BLOCK_COUNT = 4;
+const TOTAL_DISCOVERIES = DISCOVERIES_PER_BLOCK * BLOCK_COUNT;
 
 const HOSTS = ["Nico", "Vera", "Duda", "Otto", "Augusto"];
 
@@ -36,7 +39,14 @@ export default {
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
     if (request.method === "GET") {
-      return Response.json({ ok: true, service: "burrquizzz-ai", format: "episode-with-media", model: MODEL }, { headers });
+      return Response.json({
+        ok: true,
+        service: "burrquizzz-ai",
+        format: "four-block-episode",
+        blocks: BLOCK_COUNT,
+        discoveries: TOTAL_DISCOVERIES,
+        model: MODEL
+      }, { headers });
     }
     if (request.method !== "POST") {
       return Response.json({ ok: false, error: "Use POST para gerar um episódio." }, { status: 405, headers });
@@ -44,29 +54,27 @@ export default {
 
     try {
       const body = await request.json().catch(() => ({}));
-      const requestedCount = Number.parseInt(body.count, 10);
-      const count = Number.isInteger(requestedCount) ? Math.min(20, Math.max(5, requestedCount)) : 15;
       const recentQuestions = Array.isArray(body.recentQuestions)
         ? body.recentQuestions.filter((item) => typeof item === "string").slice(-50)
         : [];
       const mediaItems = sanitizeMediaItems(body.mediaItems);
-      const visualCount = mediaItems.length ? Math.min(2, mediaItems.length, Math.max(1, Math.floor(count / 8))) : 0;
-
-      const schema = buildSchema(count, mediaItems);
-      const prompt = buildPrompt(count, recentQuestions, mediaItems, visualCount);
+      const visualCount = mediaItems.length ? Math.min(2, mediaItems.length) : 0;
 
       const result = await env.AI.run(MODEL, {
         messages: [
-          { role: "system", content: prompt },
-          { role: "user", content: "Crie agora um episódio completo. Retorne apenas o JSON definido pelo esquema." }
+          { role: "system", content: buildPrompt(recentQuestions, mediaItems, visualCount) },
+          { role: "user", content: "Crie agora um episódio completo com quatro blocos de quatro descobertas. Retorne apenas o JSON definido pelo esquema." }
         ],
-        response_format: { type: "json_schema", json_schema: schema },
-        temperature: 0.85,
-        max_completion_tokens: 6500
+        response_format: {
+          type: "json_schema",
+          json_schema: buildSchema(mediaItems)
+        },
+        temperature: 0.86,
+        max_completion_tokens: 7000
       });
 
       const parsed = extractJson(result);
-      const episode = validateEpisode(parsed?.episode, count, mediaItems, visualCount);
+      const episode = validateEpisode(parsed?.episode, mediaItems, visualCount);
 
       return Response.json({
         ok: true,
@@ -90,7 +98,7 @@ function sanitizeMediaItems(items) {
   if (!Array.isArray(items)) return [];
   return items
     .filter((item) => item && item.status === "ready" && item.type === "image")
-    .slice(0, 12)
+    .slice(0, 20)
     .map((item) => ({
       id: String(item.id || "").trim(),
       title: String(item.title || "").trim(),
@@ -105,7 +113,7 @@ function sanitizeMediaItems(items) {
     .filter((item) => item.id && item.title && item.imageUrl);
 }
 
-function buildPrompt(count, recentQuestions, mediaItems, visualCount) {
+function buildPrompt(recentQuestions, mediaItems, visualCount) {
   const recentBlock = recentQuestions.length
     ? recentQuestions.map((item) => `- ${item}`).join("\n")
     : "- Nenhuma descoberta anterior informada.";
@@ -128,35 +136,39 @@ TOM
 - Nunca pareça prova, vestibular ou aula.
 - Não force piadas em todas as descobertas.
 
-EPISÓDIO
-- Gere exatamente ${count} descobertas.
-- Crie título curto e memorável, subtítulo, abertura e encerramento.
-- Escolha um apresentador entre: ${HOSTS.join(", ")}.
-- Misture pelo menos 6 universos diferentes desta lista:
+ESTRUTURA OBRIGATÓRIA
+- Exatamente 4 blocos.
+- Exatamente 4 descobertas em cada bloco.
+- Exatamente 16 descobertas no episódio.
+- Cada bloco precisa ter id curto, title marcante e intro de uma frase.
+- Os quatro blocos devem ter identidades diferentes.
+- O quarto bloco é o Grande Final.
+- A 16ª descoberta deve ser a mais memorável do episódio.
+- Não repita pessoa, artista, obra, país, década ou estrutura no episódio.
+- Misture pelo menos 6 universos desta lista:
 ${UNIVERSES.map((item) => `- ${item}`).join("\n")}
-- Não use o mesmo universo em três descobertas consecutivas.
-- Não repita artista, obra, pessoa, país, década ou estrutura dentro do episódio.
-- Ordem de dificuldade: cerca de 40% fáceis, 40% médias e 20% difíceis.
-- A última descoberta deve ser a mais memorável, não necessariamente a mais difícil.
+
+RITMO
+- Bloco 1: entrada acessível e divertida.
+- Bloco 2: cultura pop, música, TV, cinema ou internet.
+- Bloco 3: fatos mais estranhos e surpreendentes.
+- Bloco 4: Grande Final, com perguntas mais fortes e memoráveis.
+- Dificuldade total aproximada: 6 fáceis, 7 médias e 3 difíceis.
 
 DESCOBERTAS VISUAIS
 - Gere exatamente ${visualCount} descobertas com type = "image_choice".
-- Nas visuais, use somente um mediaId da lista abaixo.
-- Não invente mídia, URL, crédito ou imagem.
-- A imagem deve ser necessária para responder, não apenas decorativa.
+- Distribua as visuais em blocos diferentes.
+- Use somente mediaId da lista abaixo.
+- Não invente mídia, URL ou crédito.
+- A imagem deve ser necessária para responder.
 - Use cada mediaId no máximo uma vez.
-- As demais descobertas devem usar type = "multiple_choice" e mediaId vazio.
+- As demais devem usar type = "multiple_choice" e mediaId vazio.
 
 CATÁLOGO DISPONÍVEL
 ${mediaBlock}
 
 DESCOBERTA PERFEITA
-Cada descoberta precisa ter:
-1. um contexto curto ou detalhe intrigante;
-2. uma pergunta clara;
-3. quatro alternativas plausíveis;
-4. apenas uma resposta correta;
-5. explicação de uma ou duas frases com a parte mais interessante do fato.
+Cada descoberta precisa ter contexto curto, pergunta clara, quatro alternativas plausíveis, apenas uma correta e explicação de uma ou duas frases com o detalhe mais interessante.
 
 EVITE
 ${BANNED.map((item) => `- ${item}`).join("\n")}
@@ -164,13 +176,29 @@ ${BANNED.map((item) => `- ${item}`).join("\n")}
 NÃO REPITA NEM REFORMULE ESTAS DESCOBERTAS RECENTES
 ${recentBlock}
 
-QUALIDADE
-Antes de entregar, revise silenciosamente cada descoberta. Descarte e reescreva qualquer uma que seja genérica, escolar, duvidosa, repetitiva ou sem graça. Use apenas fatos sobre os quais tenha alta confiança.
+REVISÃO
+Antes de entregar, revise silenciosamente cada descoberta. Reescreva qualquer uma que seja genérica, escolar, duvidosa, repetitiva ou sem graça. Use apenas fatos sobre os quais tenha alta confiança.
 `;
 }
 
-function buildSchema(count, mediaItems) {
+function buildSchema(mediaItems) {
   const mediaIds = mediaItems.map((item) => item.id);
+  const discoverySchema = {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      type: { type: "string", enum: ["multiple_choice", "image_choice"] },
+      mediaId: mediaIds.length ? { type: "string", enum: ["", ...mediaIds] } : { type: "string", enum: [""] },
+      category: { type: "string" },
+      difficulty: { type: "string", enum: ["facil", "media", "dificil"] },
+      prompt: { type: "string" },
+      options: { type: "array", minItems: 4, maxItems: 4, items: { type: "string" } },
+      correctIndex: { type: "integer", minimum: 0, maximum: 3 },
+      explanation: { type: "string" }
+    },
+    required: ["type", "mediaId", "category", "difficulty", "prompt", "options", "correctIndex", "explanation"]
+  };
+
   return {
     type: "object",
     additionalProperties: false,
@@ -184,28 +212,29 @@ function buildSchema(count, mediaItems) {
           host: { type: "string", enum: HOSTS },
           intro: { type: "string" },
           outro: { type: "string" },
-          discoveries: {
+          blocks: {
             type: "array",
-            minItems: count,
-            maxItems: count,
+            minItems: 4,
+            maxItems: 4,
             items: {
               type: "object",
               additionalProperties: false,
               properties: {
-                type: { type: "string", enum: ["multiple_choice", "image_choice"] },
-                mediaId: mediaIds.length ? { type: "string", enum: ["", ...mediaIds] } : { type: "string", enum: [""] },
-                category: { type: "string" },
-                difficulty: { type: "string", enum: ["facil", "media", "dificil"] },
-                prompt: { type: "string" },
-                options: { type: "array", minItems: 4, maxItems: 4, items: { type: "string" } },
-                correctIndex: { type: "integer", minimum: 0, maximum: 3 },
-                explanation: { type: "string" }
+                id: { type: "string" },
+                title: { type: "string" },
+                intro: { type: "string" },
+                discoveries: {
+                  type: "array",
+                  minItems: 4,
+                  maxItems: 4,
+                  items: discoverySchema
+                }
               },
-              required: ["type", "mediaId", "category", "difficulty", "prompt", "options", "correctIndex", "explanation"]
+              required: ["id", "title", "intro", "discoveries"]
             }
           }
         },
-        required: ["title", "subtitle", "host", "intro", "outro", "discoveries"]
+        required: ["title", "subtitle", "host", "intro", "outro", "blocks"]
       }
     },
     required: ["episode"]
@@ -220,49 +249,76 @@ function extractJson(result) {
   return JSON.parse(raw.trim().replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/```$/, "").trim());
 }
 
-function validateEpisode(input, expectedCount, mediaItems, expectedVisualCount) {
-  if (!input || !Array.isArray(input.discoveries)) throw new Error("Episódio inválido.");
+function validateEpisode(input, mediaItems, expectedVisualCount) {
+  if (!input || !Array.isArray(input.blocks) || input.blocks.length !== BLOCK_COUNT) {
+    throw new Error("O episódio não contém quatro blocos válidos.");
+  }
 
   const mediaMap = new Map(mediaItems.map((item) => [item.id, item]));
   const usedMedia = new Set();
-  const discoveries = [];
   const seen = new Set();
+  const blocks = [];
+  const discoveries = [];
 
-  for (const item of input.discoveries) {
-    const prompt = String(item?.prompt || "").trim();
-    const options = Array.isArray(item?.options) ? item.options.map((option) => String(option).trim()) : [];
-    const correctIndex = Number(item?.correctIndex);
-    const key = normalize(prompt);
-    const requestedType = item?.type === "image_choice" ? "image_choice" : "multiple_choice";
-    const mediaId = String(item?.mediaId || "").trim();
-    const media = requestedType === "image_choice" ? mediaMap.get(mediaId) : null;
+  input.blocks.forEach((block, blockIndex) => {
+    if (!Array.isArray(block?.discoveries) || block.discoveries.length !== DISCOVERIES_PER_BLOCK) {
+      throw new Error(`O bloco ${blockIndex + 1} não contém quatro descobertas.`);
+    }
 
-    if (!prompt || key.length < 12 || seen.has(key) || options.length !== 4 || options.some((option) => !option) || new Set(options.map(normalize)).size !== 4 || !Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex > 3) continue;
-    if (requestedType === "image_choice" && (!media || usedMedia.has(mediaId))) continue;
+    const cleanBlockDiscoveries = [];
 
-    seen.add(key);
-    if (media) usedMedia.add(mediaId);
+    block.discoveries.forEach((item, position) => {
+      const prompt = String(item?.prompt || "").trim();
+      const options = Array.isArray(item?.options) ? item.options.map((option) => String(option).trim()) : [];
+      const correctIndex = Number(item?.correctIndex);
+      const key = normalize(prompt);
+      const requestedType = item?.type === "image_choice" ? "image_choice" : "multiple_choice";
+      const mediaId = String(item?.mediaId || "").trim();
+      const media = requestedType === "image_choice" ? mediaMap.get(mediaId) : null;
 
-    discoveries.push({
-      id: `ai-${crypto.randomUUID()}`,
-      type: media ? "image_choice" : "multiple_choice",
-      category: String(item.category || media?.universe || "Mundo Bizarro").trim(),
-      difficulty: ["facil", "media", "dificil"].includes(item.difficulty) ? item.difficulty : "media",
-      prompt,
-      options,
-      correctIndex,
-      explanation: String(item.explanation || "").trim(),
-      ...(media ? {
-        mediaId,
-        image: media.imageUrl,
-        imageCredit: media.credit,
-        imageSource: media.sourcePage,
-        supportText: media.credit ? `Imagem: ${media.credit}` : ""
-      } : {})
+      if (!prompt || key.length < 12 || seen.has(key)) throw new Error("Descoberta repetida ou curta demais.");
+      if (options.length !== 4 || options.some((option) => !option) || new Set(options.map(normalize)).size !== 4) throw new Error("Alternativas inválidas.");
+      if (!Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex > 3) throw new Error("Resposta correta inválida.");
+      if (requestedType === "image_choice" && (!media || usedMedia.has(mediaId))) throw new Error("Mídia visual inválida ou repetida.");
+
+      seen.add(key);
+      if (media) usedMedia.add(mediaId);
+
+      const discovery = {
+        id: `ai-${crypto.randomUUID()}`,
+        type: media ? "image_choice" : "multiple_choice",
+        category: String(item.category || media?.universe || "Mundo Bizarro").trim(),
+        difficulty: ["facil", "media", "dificil"].includes(item.difficulty) ? item.difficulty : "media",
+        blockIndex,
+        blockPosition: position,
+        isGrandFinal: blockIndex === 3 && position === 3,
+        prompt,
+        options,
+        correctIndex,
+        explanation: String(item.explanation || "").trim(),
+        ...(media ? {
+          mediaId,
+          image: media.imageUrl,
+          imageCredit: media.credit,
+          imageSource: media.sourcePage,
+          supportText: media.credit ? `Imagem: ${media.credit}` : ""
+        } : {})
+      };
+
+      cleanBlockDiscoveries.push(discovery);
+      discoveries.push(discovery);
     });
-  }
 
-  if (discoveries.length < expectedCount) throw new Error(`Foram criadas apenas ${discoveries.length} descobertas válidas.`);
+    blocks.push({
+      id: String(block.id || `bloco-${blockIndex + 1}`).trim(),
+      title: String(block.title || `Bloco ${blockIndex + 1}`).trim(),
+      intro: String(block.intro || "Mais quatro descobertas de utilidade questionável.").trim(),
+      startIndex: blockIndex * 4,
+      endIndex: blockIndex * 4 + 3,
+      discoveries: cleanBlockDiscoveries.map((item) => item.id)
+    });
+  });
+
   const visualCount = discoveries.filter((item) => item.type === "image_choice").length;
   if (visualCount < expectedVisualCount) throw new Error(`Foram criadas apenas ${visualCount} descobertas visuais válidas.`);
 
@@ -273,10 +329,16 @@ function validateEpisode(input, expectedCount, mediaItems, expectedVisualCount) 
     host: HOSTS.includes(input.host) ? input.host : "Nico",
     intro: String(input.intro || "Prepare-se para descobrir coisas que você não precisava saber — até agora.").trim(),
     outro: String(input.outro || "Agora você sabe mais coisas inúteis do que alguns minutos atrás.").trim(),
-    discoveries: discoveries.slice(0, expectedCount)
+    blocks,
+    discoveries
   };
 }
 
 function normalize(value) {
-  return String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
