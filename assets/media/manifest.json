@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "updatedAt": "2026-08-05",
+  "items": [
+    {
+      "id": "retro-vhs-001",
+      "type": "image",
+      "status": "ready",
+      "universe": "Rebobina!",
+      "title": "Fita VHS",
+      "subject": "fita VHS vista de cima",
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/VHS-cassette.jpg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:VHS-cassette.jpg",
+      "author": "Groink",
+      "license": "CC BY-SA 3.0",
+      "credit": "Groink / Wikimedia Commons / CC BY-SA 3.0",
+      "tags": ["anos 80", "anos 90", "vídeo", "locadora", "tecnologia"],
+      "questionSeeds": [
+        "Que objeto é este?",
+        "Qual formato doméstico de vídeo aparece na imagem?",
+        "Que hábito doméstico este objeto tornou comum antes do streaming?"
+      ]
+    },
+    {
+      "id": "retro-floppy-001",
+      "type": "image",
+      "status": "ready",
+      "universe": "Internet Discada",
+      "title": "Disquete de 3,5 polegadas",
+      "subject": "disquete",
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Floppy_disk.jpg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Floppy_disk.jpg",
+      "author": "Shizhao",
+      "license": "CC BY-SA 3.0",
+      "credit": "Shizhao / Wikimedia Commons / CC BY-SA 3.0",
+      "tags": ["computador", "anos 90", "armazenamento", "tecnologia"],
+      "questionSeeds": [
+        "Que objeto é este?",
+        "Qual era a função principal deste objeto?",
+        "Qual ícone moderno ainda preserva a forma deste objeto?"
+      ]
+    },
+    {
+      "id": "retro-pager-001",
+      "type": "image",
+      "status": "ready",
+      "universe": "Internet Discada",
+      "title": "Pager",
+      "subject": "pager ou bip",
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Pager.jpg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:Pager.jpg",
+      "author": "Hades2k",
+      "license": "CC BY-SA 2.0",
+      "credit": "Hades2k / Wikimedia Commons / CC BY-SA 2.0",
+      "tags": ["bip", "comunicação", "anos 90", "tecnologia"],
+      "questionSeeds": [
+        "Que aparelho é este?",
+        "Que tipo de mensagem este aparelho recebia?",
+        "Qual profissão ficou fortemente associada a este objeto?"
+      ]
+    },
+    {
+      "id": "retro-crt-001",
+      "type": "image",
+      "status": "ready",
+      "universe": "Zapeando",
+      "title": "Televisão de tubo",
+      "subject": "televisão CRT",
+      "imageUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/CRT_Television.jpg",
+      "sourcePage": "https://commons.wikimedia.org/wiki/File:CRT_Television.jpg",
+      "author": "asobuno",
+      "license": "CC BY-SA 3.0",
+      "credit": "asobuno / Wikimedia Commons / CC BY-SA 3.0",
+      "tags": ["televisão", "CRT", "anos 80", "anos 90", "eletrônicos"],
+      "questionSeeds": [
+        "Que tipo de televisão é esta?",
+        "Qual tecnologia de tela este aparelho usa?",
+        "Por que este tipo de televisão era tão profundo?"
+      ]
+    }
+  ]
+}
