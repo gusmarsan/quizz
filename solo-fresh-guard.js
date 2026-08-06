@@ -113,10 +113,13 @@ function applyRotatingLocalEpisode(previousSignature) {
     currentPlayableQuestions().map((item) => normalize(item.prompt))
   );
 
-  let pool = LOCAL_QUESTION_BANK.filter((item) => !historySet.has(normalize(item.prompt)));
+  let pool = LOCAL_QUESTION_BANK.filter((item) => {
+    const key = normalize(item.prompt);
+    return !historySet.has(key) && !previousPrompts.has(key);
+  });
 
   // Quando o histórico completar uma volta pelo banco, inicia outro ciclo,
-  // mas ainda evita todas as perguntas da partida imediatamente anterior.
+  // mas continua excluindo toda a partida imediatamente anterior.
   if (pool.length < TOTAL_DISCOVERIES) {
     pool = LOCAL_QUESTION_BANK.filter(
       (item) => !previousPrompts.has(normalize(item.prompt))
