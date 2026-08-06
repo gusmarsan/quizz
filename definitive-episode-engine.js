@@ -3,13 +3,23 @@ import { QUESTIONS } from "./questions.js";
 const AI_ENDPOINT = "https://quiz-duelo-ai.gustavomarsan.workers.dev/";
 const MEDIA_MANIFEST_URL = "./assets/media/manifest.json";
 const TOTAL = 16;
-const FETCH_TIMEOUT_MS = 28000;
-const RETRY_DELAY_MS = 2200;
-const MAX_GENERATION_ATTEMPTS = 2;
+const FETCH_TIMEOUT_MS = 24000;
+const MEDIA_TIMEOUT_MS = 4500;
+const RETRY_DELAY_MS = 1400;
+const MAX_GENERATION_ATTEMPTS = 4;
 const MAX_POOL = 1200;
 const MAX_HISTORY = 3000;
+const HISTORY_BATCH_SIZE = 5;
+const MAX_HISTORY_BATCHES = 50;
+const STOP_WORDS = new Set([
+  "qual", "quais", "quem", "como", "onde", "quando", "porque", "por", "que", "com", "sem",
+  "uma", "umas", "uns", "para", "dos", "das", "nas", "nos", "este", "esta", "esse", "essa",
+  "foi", "era", "sao", "tem", "teve", "nome", "chamado", "chamada", "ficou", "conhecido",
+  "aparece", "filme", "serie", "musica", "programa", "alternativa", "correta", "imagem"
+]);
 
 const CURRENT_KEY = "burrquizzzCurrentEpisodeV3";
+const LEGACY_CURRENT_KEY = "burrquizzzCurrentEpisode";
 const NEXT_KEY = "burrquizzzNextEpisodeV3";
 const POOL_KEY = "burrquizzzQuestionPoolV3";
 const HISTORY_KEY = "burrquizzzPlayedQuestionsV3";
@@ -22,56 +32,84 @@ const STATIC_QUESTIONS = QUESTIONS.map(cloneQuestion).filter(isValidQuestion);
 const gameScreen = document.querySelector("#screen-game");
 const setupScreen = document.querySelector("#screen-solo-setup");
 const startButton = document.querySelector("#startSoloButton");
+const questionText = document.querySelector("#questionText");
 
 let activeEpisode = null;
 let mediaItems = [];
 let generationPromise = null;
 let generationQueued = false;
 let episodeStarted = false;
-let recordedEpisodeId = "";
 let setupWasActive = setupScreen?.classList.contains("active") || false;
+let recordedPrompts = new Set();
 
-boot();
+document.documentElement.dataset.episodeReady = "false";
+document.documentElement.dataset.noRepeatEngine = "v3-strict-resilient";
+
+window.addEventListener("burrquizzz:retry-generation", () => {
+  void prepareEpisodeForPlay("manual-retry");
+});
+
+void boot();
 
 async function boot() {
   migrateHistory();
   restoreStartButton();
   observeFlow();
+  signalPreparing("Conferindo o acervo e o histórico de perguntas.");
 
   mediaItems = await loadMediaItems();
-  const cached = consumeNextEpisode();
-  const first = isFreshEpisode(cached)
-    ? cached
-    : buildLocalEpisode("initial");
 
-  applyEpisode(first, cached ? "prefetched" : "local-fresh");
-  ensureNextEpisode();
-  queueGeneration();
+  const cached = consumeNextEpisode();
+  if (isFreshEpisode(cached)) {
+    applyEpisode(cached, "prefetched");
+  } else {
+    const local = tryBuildLocalEpisode("initial");
+    if (local) {
+      applyEpisode(local, "local-fresh");
+    } else {
+      await prepareEpisodeForPlay("initial-generation");
+    }
+  }
+
+  if (activeEpisode) {
+    ensureNextEpisode();
+    queueGeneration();
+  }
 }
 
 function observeFlow() {
-  if (!gameScreen || !setupScreen) return;
+  if (gameScreen && setupScreen) {
+    const screenObserver = new MutationObserver(() => {
+      const gameActive = gameScreen.classList.contains("active");
+      const setupActive = setupScreen.classList.contains("active");
 
-  const observer = new MutationObserver(() => {
-    const gameActive = gameScreen.classList.contains("active");
-    const setupActive = setupScreen.classList.contains("active");
+      if (gameActive && activeEpisode) {
+        episodeStarted = true;
+        recordVisibleQuestion();
+        ensureNextEpisode();
+        queueGeneration();
+      }
 
-    if (gameActive && activeEpisode) {
-      episodeStarted = true;
-      recordEpisode(activeEpisode);
-      ensureNextEpisode();
-      queueGeneration();
-    }
+      if (episodeStarted && setupActive && !setupWasActive) {
+        void activateNextEpisode();
+      }
 
-    if (episodeStarted && setupActive && !setupWasActive) {
-      activateNextEpisode();
-    }
+      setupWasActive = setupActive;
+    });
 
-    setupWasActive = setupActive;
-  });
+    screenObserver.observe(gameScreen, { attributes: true, attributeFilter: ["class"] });
+    screenObserver.observe(setupScreen, { attributes: true, attributeFilter: ["class"] });
+  }
 
-  observer.observe(gameScreen, { attributes: true, attributeFilter: ["class"] });
-  observer.observe(setupScreen, { attributes: true, attributeFilter: ["class"] });
+  if (questionText) {
+    new MutationObserver(() => {
+      if (gameScreen?.classList.contains("active")) recordVisibleQuestion();
+    }).observe(questionText, {
+      childList: true,
+      characterData: true,
+      subtree: true
+    });
+  }
 }
 
 function restoreStartButton() {
@@ -81,10 +119,33 @@ function restoreStartButton() {
   document.documentElement.dataset.episodeLoading = "background";
 }
 
+async function prepareEpisodeForPlay(reason) {
+  if (activeEpisode && document.documentElement.dataset.episodeReady === "true") {
+    return activeEpisode;
+  }
+
+  signalPreparing(
+    reason === "manual-retry"
+      ? "Tentando novamente criar um episódio realmente inédito."
+      : "O acervo local acabou. Criando novas perguntas sem repetir as anteriores."
+  );
+
+  try {
+    const candidate = await requestGeneratedCandidate();
+    applyEpisode(candidate, candidate?.source || "ai-strict");
+    ensureNextEpisode();
+    queueGeneration();
+    return candidate;
+  } catch (error) {
+    signalError(error);
+    return null;
+  }
+}
+
 function applyEpisode(episode, source) {
   const discoveries = normalizeQuestions(episode?.discoveries);
   if (discoveries.length !== TOTAL || containsInternalDuplicates(discoveries)) {
-    throw new Error("Episódio inválido ou com perguntas repetidas.");
+    throw new Error("O episódio recebido não tem 16 perguntas inéditas válidas.");
   }
 
   const normalized = {
@@ -100,30 +161,56 @@ function applyEpisode(episode, source) {
   };
 
   activeEpisode = normalized;
-  recordedEpisodeId = "";
+  recordedPrompts = new Set();
   QUESTIONS.splice(0, QUESTIONS.length, ...discoveries);
   localStorage.setItem(CURRENT_KEY, JSON.stringify(normalized));
+  localStorage.setItem(LEGACY_CURRENT_KEY, JSON.stringify(normalized));
   window.BURRQUIZZZ_EPISODE = normalized;
+
   document.documentElement.dataset.questionSource = source;
   document.documentElement.dataset.episodeDelivery = source;
   document.documentElement.dataset.episodeReady = "true";
-  document.documentElement.dataset.noRepeatEngine = "v3-strict";
+  document.documentElement.dataset.episodeState = "ready";
+  document.documentElement.dataset.noRepeatEngine = "v3-strict-resilient";
+  delete document.documentElement.dataset.episodeError;
+
   restoreStartButton();
   window.dispatchEvent(new CustomEvent("burrquizzz:episode-ready", { detail: normalized }));
 }
 
-function activateNextEpisode() {
-  let next = consumeNextEpisode();
+async function activateNextEpisode() {
+  signalPreparing("Separando o próximo episódio sem repetir perguntas.");
 
-  if (!isFreshEpisode(next)) {
-    next = buildLocalEpisode("rotation");
+  let next = consumeNextEpisode();
+  if (!isFreshEpisode(next) || !isDifferentFromActive(next)) {
+    next = tryBuildLocalEpisode("rotation");
+  }
+
+  if (!next) {
+    try {
+      next = await requestGeneratedCandidate();
+    } catch (error) {
+      signalError(error);
+      return;
+    }
   }
 
   try {
     applyEpisode(next, next?.source || "strict-rotation");
   } catch (error) {
-    console.warn("Episódio armazenado rejeitado pela barreira antirrepetição.", error);
-    applyEpisode(buildLocalEpisode("recovery"), "strict-recovery");
+    console.warn("O próximo episódio foi rejeitado pela barreira antirrepetição.", error);
+    const recovery = tryBuildLocalEpisode("recovery");
+    if (recovery) {
+      applyEpisode(recovery, "strict-recovery");
+    } else {
+      try {
+        const generated = await requestGeneratedCandidate();
+        applyEpisode(generated, generated?.source || "ai-recovery");
+      } catch (generationError) {
+        signalError(generationError);
+        return;
+      }
+    }
   }
 
   ensureNextEpisode();
@@ -137,15 +224,16 @@ function ensureNextEpisode() {
     return stored;
   }
 
-  try {
-    const local = buildLocalEpisode("rotation");
+  localStorage.removeItem(NEXT_KEY);
+  const local = tryBuildLocalEpisode("rotation");
+  if (local) {
     storeNextEpisode(local);
     return local;
-  } catch (error) {
-    document.documentElement.dataset.nextEpisodeReady = "waiting-ai";
-    queueGeneration();
-    return null;
   }
+
+  document.documentElement.dataset.nextEpisodeReady = "waiting-ai";
+  queueGeneration();
+  return null;
 }
 
 function buildLocalEpisode(source) {
@@ -160,7 +248,7 @@ function buildLocalEpisode(source) {
 
   const selected = selectBalanced(eligible, TOTAL);
   if (selected.length !== TOTAL) {
-    throw new Error(`Só há ${selected.length} perguntas realmente inéditas disponíveis.`);
+    throw new Error(`Só há ${selected.length} perguntas locais realmente inéditas.`);
   }
 
   return {
@@ -170,10 +258,18 @@ function buildLocalEpisode(source) {
     subtitle: "O histórico inteiro foi conferido antes da seleção",
     host: "Nico",
     intro: "Pergunta repetida tentou entrar, mas foi barrada na porta.",
-    outro: "Estas dezesseis agora também entram para o histórico.",
+    outro: "As perguntas vistas nesta rodada agora também entram para o histórico.",
     discoveries: selected,
     blocks: normalizeBlocks([], selected)
   };
+}
+
+function tryBuildLocalEpisode(source) {
+  try {
+    return buildLocalEpisode(source);
+  } catch {
+    return null;
+  }
 }
 
 function queueGeneration() {
@@ -182,10 +278,16 @@ function queueGeneration() {
     return generationPromise;
   }
 
-  generationPromise = generateFreshInventory()
+  generationPromise = generateFreshCandidate()
+    .then((candidate) => {
+      if (candidate) storeNextEpisode(candidate);
+      document.documentElement.dataset.backgroundGeneration = "ready";
+      return candidate;
+    })
     .catch((error) => {
-      console.warn("A IA não respondeu a tempo. O acervo local continua funcionando.", error);
+      console.warn("A geração em segundo plano não ficou pronta.", error);
       document.documentElement.dataset.backgroundGeneration = "fallback";
+      return null;
     })
     .finally(() => {
       generationPromise = null;
@@ -198,11 +300,30 @@ function queueGeneration() {
   return generationPromise;
 }
 
-async function generateFreshInventory() {
+function requestGeneratedCandidate() {
+  if (generationPromise) return generationPromise;
+
+  generationPromise = generateFreshCandidate()
+    .finally(() => {
+      generationPromise = null;
+      if (generationQueued) {
+        generationQueued = false;
+        setTimeout(queueGeneration, RETRY_DELAY_MS);
+      }
+    });
+
+  return generationPromise;
+}
+
+async function generateFreshCandidate() {
   document.documentElement.dataset.backgroundGeneration = "running";
-  let acceptedTotal = 0;
+  let acceptedInventory = [];
 
   for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt += 1) {
+    signalProgress(
+      `Gerando perguntas inéditas: tentativa ${attempt} de ${MAX_GENERATION_ATTEMPTS}.`
+    );
+
     const payload = {
       count: TOTAL,
       recentQuestions: getAIHistory(),
@@ -211,39 +332,48 @@ async function generateFreshInventory() {
       requestNonce: crypto.randomUUID()
     };
 
-    const data = await fetchWithTimeout(payload);
-    const generated = normalizeQuestions(
-      data?.episode?.discoveries ||
-      data?.questions ||
-      data?.episode?.blocks?.flatMap((block) => block?.discoveries || [])
-    );
+    try {
+      const data = await fetchWithTimeout(payload);
+      const generated = normalizeQuestions(
+        data?.episode?.discoveries ||
+        data?.questions ||
+        data?.episode?.blocks?.flatMap((block) => block?.discoveries || [])
+      );
 
-    const accepted = acceptFreshQuestions(generated);
-    if (accepted.length) {
-      mergeIntoPool(accepted);
-      acceptedTotal += accepted.length;
-    }
+      const accepted = acceptFreshQuestions(generated, acceptedInventory);
+      acceptedInventory = dedupeQuestions([...acceptedInventory, ...accepted]);
 
-    const candidate = buildCandidateFromGenerated(data?.episode, accepted);
-    if (candidate && isFreshEpisode(candidate) && isDifferentFromActive(candidate)) {
-      storeNextEpisode(candidate);
-      document.documentElement.dataset.backgroundGeneration = "ready";
-      document.documentElement.dataset.generatedFreshCount = String(acceptedTotal);
-      return candidate;
-    }
+      if (accepted.length) mergeIntoPool(accepted);
 
-    const local = tryBuildLocalEpisode();
-    if (local) {
-      storeNextEpisode(local);
-      document.documentElement.dataset.backgroundGeneration = "ready";
-      document.documentElement.dataset.generatedFreshCount = String(acceptedTotal);
-      return local;
+      const generatedCandidate = buildCandidateFromInventory(
+        data?.episode,
+        acceptedInventory
+      );
+      if (generatedCandidate) {
+        document.documentElement.dataset.generatedFreshCount = String(
+          acceptedInventory.length
+        );
+        return generatedCandidate;
+      }
+
+      const pooledCandidate = tryBuildLocalEpisode("pool-fresh");
+      if (pooledCandidate) {
+        document.documentElement.dataset.generatedFreshCount = String(
+          acceptedInventory.length
+        );
+        return pooledCandidate;
+      }
+    } catch (error) {
+      console.warn(`Tentativa ${attempt} de geração falhou.`, error);
+      if (attempt === MAX_GENERATION_ATTEMPTS) throw error;
     }
 
     if (attempt < MAX_GENERATION_ATTEMPTS) await delay(RETRY_DELAY_MS);
   }
 
-  throw new Error("A IA não produziu perguntas inéditas suficientes após duas tentativas.");
+  throw new Error(
+    "Não foi possível reunir 16 perguntas inéditas agora. Tente novamente em instantes."
+  );
 }
 
 async function fetchWithTimeout(payload) {
@@ -253,17 +383,23 @@ async function fetchWithTimeout(payload) {
   try {
     const response = await fetch(AI_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      },
       body: JSON.stringify(payload),
       signal: controller.signal,
       cache: "no-store"
     });
 
-    if (!response.ok) throw new Error(`Gerador respondeu com status ${response.status}.`);
+    if (!response.ok) {
+      throw new Error(`O gerador respondeu com status ${response.status}.`);
+    }
+
     return await response.json();
   } catch (error) {
     if (error?.name === "AbortError") {
-      throw new Error("Tempo limite de geração excedido.");
+      throw new Error("A geração ultrapassou o limite de tempo.");
     }
     throw error;
   } finally {
@@ -271,14 +407,14 @@ async function fetchWithTimeout(payload) {
   }
 }
 
-function acceptFreshQuestions(items) {
+function acceptFreshQuestions(items, pending = []) {
   const history = getHistory();
   const pool = getPool();
   const active = normalizeQuestions(activeEpisode?.discoveries);
   const accepted = [];
 
   for (const question of normalizeQuestions(items)) {
-    const existing = [...history, ...pool, ...active, ...accepted];
+    const existing = [...history, ...pool, ...active, ...pending, ...accepted];
     if (existing.some((item) => isDuplicate(question, item))) continue;
     accepted.push(question);
   }
@@ -286,47 +422,44 @@ function acceptFreshQuestions(items) {
   return accepted;
 }
 
-function buildCandidateFromGenerated(source, accepted) {
-  if (accepted.length < TOTAL) return null;
-  const discoveries = selectBalanced(accepted, TOTAL);
+function buildCandidateFromInventory(source, inventory) {
+  const discoveries = selectBalanced(inventory, TOTAL);
   if (discoveries.length !== TOTAL) return null;
 
-  return {
+  const candidate = {
     id: `episode-ai-${crypto.randomUUID()}`,
     source: "ai-strict",
     title: source?.title || "Episódio inédito",
-    subtitle: source?.subtitle || "A IA criou; a barreira antirrepetição aprovou",
+    subtitle: source?.subtitle || "A IA criou e a barreira antirrepetição aprovou",
     host: source?.host || "Nico",
     intro: source?.intro || "Tudo novo por aqui.",
-    outro: source?.outro || "Agora estas também saem da fila.",
+    outro: source?.outro || "As perguntas vistas agora também saem da fila.",
     discoveries,
     blocks: normalizeBlocks(source?.blocks, discoveries)
   };
+
+  return isFreshEpisode(candidate) && isDifferentFromActive(candidate)
+    ? candidate
+    : null;
 }
 
-function tryBuildLocalEpisode() {
-  try {
-    return buildLocalEpisode("pool-fresh");
-  } catch {
-    return null;
-  }
-}
+function recordVisibleQuestion() {
+  const prompt = String(questionText?.textContent || "").trim();
+  if (!prompt || prompt === "Pergunta" || recordedPrompts.has(normalize(prompt))) return;
 
-function recordEpisode(episode) {
-  if (!episode?.id || recordedEpisodeId === episode.id) return;
-  recordedEpisodeId = episode.id;
+  const question = normalizeQuestions(activeEpisode?.discoveries)
+    .find((item) => normalize(item.prompt) === normalize(prompt));
+  if (!question) return;
 
+  recordedPrompts.add(normalize(prompt));
   const existing = getHistory();
-  const additions = normalizeQuestions(episode.discoveries).map((question) => historyItem(question));
-  const merged = [...existing];
-
-  for (const addition of additions) {
-    if (merged.some((item) => isDuplicate(addition, item))) continue;
-    merged.push(addition);
+  const addition = historyItem(question);
+  if (!existing.some((item) => isDuplicate(addition, item))) {
+    existing.push(addition);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(existing.slice(-MAX_HISTORY)));
   }
 
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(merged.slice(-MAX_HISTORY)));
-  document.documentElement.dataset.playedQuestionCount = String(merged.length);
+  document.documentElement.dataset.playedQuestionCount = String(existing.length);
 
   const storedNext = readJson(NEXT_KEY);
   if (!isFreshEpisode(storedNext)) localStorage.removeItem(NEXT_KEY);
@@ -358,10 +491,17 @@ function migrateHistory() {
 }
 
 function getAIHistory() {
-  return getHistory().slice(-500).map((item) => {
+  const rows = getHistory().slice(-250).map((item) => {
     const answer = item.answer ? ` | Resposta: ${item.answer}` : "";
-    return `Pergunta: ${item.prompt}${answer} | Assinatura: ${item.fingerprint || fingerprint(item)}`;
+    return `Pergunta: ${item.prompt}${answer}`;
   });
+
+  const batches = [];
+  for (let index = 0; index < rows.length; index += HISTORY_BATCH_SIZE) {
+    batches.push(rows.slice(index, index + HISTORY_BATCH_SIZE).join("\n"));
+  }
+
+  return batches.slice(-MAX_HISTORY_BATCHES);
 }
 
 function getPool() {
@@ -377,6 +517,7 @@ function mergeIntoPool(items) {
     ...normalizeQuestions(readArray(POOL_KEY)),
     ...normalizeQuestions(items)
   ]).slice(-MAX_POOL);
+
   localStorage.setItem(POOL_KEY, JSON.stringify(merged));
   document.documentElement.dataset.questionPoolSize = String(
     dedupeQuestions([...STATIC_QUESTIONS, ...merged]).length
@@ -385,7 +526,11 @@ function mergeIntoPool(items) {
 
 function storeNextEpisode(episode) {
   if (!isFreshEpisode(episode) || !isDifferentFromActive(episode)) return false;
-  localStorage.setItem(NEXT_KEY, JSON.stringify({ ...episode, storedAt: Date.now() }));
+
+  localStorage.setItem(NEXT_KEY, JSON.stringify({
+    ...episode,
+    storedAt: Date.now()
+  }));
   document.documentElement.dataset.nextEpisodeReady = "true";
   return true;
 }
@@ -399,19 +544,26 @@ function consumeNextEpisode() {
 function isFreshEpisode(episode) {
   const discoveries = normalizeQuestions(episode?.discoveries);
   if (discoveries.length !== TOTAL || containsInternalDuplicates(discoveries)) return false;
+
   const history = getHistory();
-  return discoveries.every((question) => !history.some((item) => isDuplicate(question, item)));
+  return discoveries.every(
+    (question) => !history.some((item) => isDuplicate(question, item))
+  );
 }
 
 function isDifferentFromActive(episode) {
   if (!activeEpisode) return true;
+
   const active = normalizeQuestions(activeEpisode.discoveries);
-  return normalizeQuestions(episode?.discoveries)
-    .every((question) => !active.some((item) => isDuplicate(question, item)));
+  return normalizeQuestions(episode?.discoveries).every(
+    (question) => !active.some((item) => isDuplicate(question, item))
+  );
 }
 
 function containsInternalDuplicates(items) {
-  return items.some((item, index) => items.slice(0, index).some((prior) => isDuplicate(item, prior)));
+  return items.some(
+    (item, index) => items.slice(0, index).some((prior) => isDuplicate(item, prior))
+  );
 }
 
 function isDuplicate(a, b) {
@@ -431,8 +583,11 @@ function isDuplicate(a, b) {
   const sameAnswer = Boolean(answerA && answerB && answerA === answerB);
   const fpA = a?.fingerprint || fingerprint(a);
   const fpB = b?.fingerprint || fingerprint(b);
+  const sameFingerprint = Boolean(
+    fpA && fpB && fpA !== "::" && fpB !== "::" && fpA === fpB
+  );
 
-  return fpA === fpB
+  return sameFingerprint
     || (sameAnswer && intersection >= 2 && containment >= 0.46)
     || (intersection >= 4 && containment >= 0.68)
     || (intersection >= 5 && jaccard >= 0.52);
@@ -440,25 +595,22 @@ function isDuplicate(a, b) {
 
 function fingerprint(item) {
   const promptTokens = [...meaningfulTokens(normalize(item?.prompt))].sort();
-  const answerTokens = [...meaningfulTokens(normalize(questionAnswer(item) || item?.answer))].sort();
-  return `${promptTokens.slice(0, 12).join("-")}::${answerTokens.slice(0, 5).join("-")}`;
+  const answerTokens = [
+    ...meaningfulTokens(normalize(questionAnswer(item) || item?.answer))
+  ].sort();
+
+  return `${promptTokens.slice(0, 12).join("-")}::${answerTokens
+    .slice(0, 5)
+    .join("-")}`;
 }
 
 function meaningfulTokens(value) {
-  const ignored = STOP_WORDS;
   return new Set(
     normalize(value)
       .split(" ")
-      .filter((token) => token.length >= 3 && !ignored.has(token))
+      .filter((token) => token.length >= 3 && !STOP_WORDS.has(token))
   );
 }
-
-const STOP_WORDS = new Set([
-  "qual", "quais", "quem", "como", "onde", "quando", "porque", "por", "que", "com", "sem",
-  "uma", "umas", "uns", "para", "dos", "das", "nas", "nos", "este", "esta", "esse", "essa",
-  "foi", "era", "sao", "tem", "teve", "nome", "chamado", "chamada", "ficou", "conhecido",
-  "aparece", "filme", "serie", "musica", "programa", "alternativa", "correta", "imagem"
-]);
 
 function selectBalanced(items, count) {
   const shuffled = shuffle(dedupeQuestions(items));
@@ -469,6 +621,7 @@ function selectBalanced(items, count) {
     const category = normalize(question.category || "geral");
     const used = categories.get(category) || 0;
     if (used >= 3) continue;
+
     selected.push(cloneQuestion(question));
     categories.set(category, used + 1);
     if (selected.length === count) return selected;
@@ -487,7 +640,9 @@ function normalizeBlocks(blocks, discoveries) {
   const source = Array.isArray(blocks) ? blocks : [];
   return [0, 1, 2, 3].map((index) => ({
     id: source[index]?.id || `block-${index + 1}`,
-    title: source[index]?.title || ["Aquecimento", "Cultura pop", "Mundo bizarro", "Grande Final"][index],
+    title:
+      source[index]?.title ||
+      ["Aquecimento", "Cultura pop", "Mundo bizarro", "Grande Final"][index],
     intro: source[index]?.intro || "Quatro descobertas inéditas.",
     discoveries: discoveries.slice(index * 4, index * 4 + 4)
   }));
@@ -499,7 +654,9 @@ function normalizeQuestions(items) {
 }
 
 function normalizeQuestion(question) {
-  const options = Array.isArray(question?.options) ? question.options.map((item) => String(item).trim()) : [];
+  const options = Array.isArray(question?.options)
+    ? question.options.map((item) => String(item).trim())
+    : [];
   const correctIndex = Number(question?.correctIndex);
   const prompt = String(question?.prompt || "").trim();
   const type = question?.type === "image_choice" ? "image_choice" : "multiple_choice";
@@ -524,10 +681,16 @@ function normalizeQuestion(question) {
 function isValidQuestion(question) {
   return Boolean(
     question &&
-    typeof question.prompt === "string" && question.prompt.length >= 8 &&
-    Array.isArray(question.options) && question.options.length === 4 &&
-    question.options.every((option) => typeof option === "string" && option.trim()) &&
-    Number.isInteger(question.correctIndex) && question.correctIndex >= 0 && question.correctIndex < 4
+    typeof question.prompt === "string" &&
+    question.prompt.length >= 8 &&
+    Array.isArray(question.options) &&
+    question.options.length === 4 &&
+    question.options.every(
+      (option) => typeof option === "string" && option.trim()
+    ) &&
+    Number.isInteger(question.correctIndex) &&
+    question.correctIndex >= 0 &&
+    question.correctIndex < 4
   );
 }
 
@@ -554,6 +717,7 @@ function historyItem(question) {
 function normalizeHistoryItem(item) {
   const prompt = String(item?.prompt || item?.question || "").trim();
   const answer = String(item?.answer || item?.correctAnswer || "").trim();
+
   return {
     prompt,
     answer,
@@ -606,14 +770,59 @@ function readJson(key) {
 }
 
 async function loadMediaItems() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), MEDIA_TIMEOUT_MS);
+
   try {
-    const response = await fetch(`${MEDIA_MANIFEST_URL}?v=2.0`, { cache: "no-store" });
+    const response = await fetch(`${MEDIA_MANIFEST_URL}?v=2.0.1`, {
+      cache: "no-store",
+      signal: controller.signal
+    });
     if (!response.ok) return [];
+
     const data = await response.json();
-    return Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+    return Array.isArray(data)
+      ? data
+      : Array.isArray(data?.items)
+        ? data.items
+        : [];
   } catch {
     return [];
+  } finally {
+    clearTimeout(timeout);
   }
+}
+
+function signalPreparing(message) {
+  document.documentElement.dataset.episodeReady = "false";
+  document.documentElement.dataset.episodeState = "preparing";
+  delete document.documentElement.dataset.episodeError;
+  window.dispatchEvent(new CustomEvent("burrquizzz:episode-preparing", {
+    detail: { message }
+  }));
+}
+
+function signalProgress(message) {
+  document.documentElement.dataset.episodeState = "preparing";
+  window.dispatchEvent(new CustomEvent("burrquizzz:episode-progress", {
+    detail: { message }
+  }));
+}
+
+function signalError(error) {
+  const message = error instanceof Error
+    ? error.message
+    : "Não foi possível preparar o episódio.";
+
+  document.documentElement.dataset.episodeReady = "false";
+  document.documentElement.dataset.episodeState = "error";
+  document.documentElement.dataset.episodeError = message;
+  document.documentElement.dataset.backgroundGeneration = "error";
+
+  console.error("Falha ao preparar episódio do Burrquizzz.", error);
+  window.dispatchEvent(new CustomEvent("burrquizzz:episode-error", {
+    detail: { message }
+  }));
 }
 
 function delay(ms) {
