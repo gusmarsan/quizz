@@ -1,5 +1,6 @@
 import "./quality-runtime.js";
 import "./question-hotfixes.js";
+import "./freshness-guard.js?v=1.85";
 import "./episode-intro.js";
 import "./episode-sync.js";
 import "./block-runtime.js";

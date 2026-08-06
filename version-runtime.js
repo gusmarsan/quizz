@@ -1,10 +1,17 @@
-const APP_VERSION = "1.8";
+const APP_VERSION = "1.85";
 
 mountVersion();
 
 function mountVersion() {
   const boot = () => {
-    if (document.querySelector("#burrAppVersion")) return;
+    const existing = document.querySelector("#burrAppVersion");
+    if (existing) {
+      existing.textContent = `v${APP_VERSION}`;
+      existing.title = `Burrquizzz versão ${APP_VERSION}`;
+      existing.setAttribute("aria-label", `Versão ${APP_VERSION}`);
+      document.documentElement.dataset.appVersion = APP_VERSION;
+      return;
+    }
 
     const version = document.createElement("div");
     version.id = "burrAppVersion";
