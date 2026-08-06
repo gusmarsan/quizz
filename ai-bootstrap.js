@@ -5,6 +5,7 @@ import "./episode-intro.js";
 import "./episode-sync.js";
 import "./block-runtime.js?v=2.0";
 import "./episode-migration.js";
+import "./history-preload-v2.js?v=2.0";
 import "./definitive-episode-engine.js?v=2.0";
 import "./rarity-runtime.js";
 import "./version-runtime.js?v=2.0";
