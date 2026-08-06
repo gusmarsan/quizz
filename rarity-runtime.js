@@ -4,6 +4,16 @@ const EPISODE_STORAGE_KEY = "burrquizzzCurrentEpisode";
 const RARITY_VALUES = new Set(["common", "rare", "legendary"]);
 
 let lastLegendaryPrompt = "";
+let currentQuestion = null;
+const raritySession = {
+  episodeId: "",
+  seen: new Set(),
+  answered: new Set(),
+  rareTotal: 0,
+  rareCorrect: 0,
+  legendaryTotal: 0,
+  legendaryCorrect: 0
+};
 
 applyCurrentEpisodeRarities();
 installRarityPresentation();
@@ -23,6 +33,7 @@ function applyCurrentEpisodeRarities() {
     discoveries: QUESTIONS
   };
   assignRarities(temporaryEpisode);
+  syncQuestionBank(temporaryEpisode.discoveries);
 }
 
 function applyEpisodeRarities(episode) {
@@ -34,6 +45,8 @@ function applyEpisodeRarities(episode) {
   const rareCount = episode.discoveries.filter((item) => item.rarity === "rare").length;
   const legendaryCount = episode.discoveries.filter((item) => item.rarity === "legendary").length;
   episode.raritySummary = { rareCount, legendaryCount };
+
+  if (raritySession.episodeId !== episode.id) resetRaritySession(episode.id);
 
   localStorage.setItem(EPISODE_STORAGE_KEY, JSON.stringify(episode));
   window.BURRQUIZZZ_EPISODE = episode;
@@ -88,6 +101,8 @@ function syncQuestionBank(discoveries) {
 function installRarityPresentation() {
   const boot = () => {
     const questionText = document.querySelector("#questionText");
+    const feedback = document.querySelector("#feedbackBanner");
+    const results = document.querySelector("#screen-results");
     if (!questionText) return;
 
     new MutationObserver(syncVisibleRarity).observe(questionText, {
@@ -95,6 +110,22 @@ function installRarityPresentation() {
       characterData: true,
       subtree: true
     });
+
+    if (feedback) {
+      new MutationObserver(recordVisibleAnswer).observe(feedback, {
+        attributes: true,
+        attributeFilter: ["class"],
+        childList: true,
+        characterData: true,
+        subtree: true
+      });
+    }
+
+    if (results) {
+      new MutationObserver(() => {
+        if (results.classList.contains("active")) renderRarityResult();
+      }).observe(results, { attributes: true, attributeFilter: ["class"] });
+    }
 
     syncVisibleRarity();
     injectStyles();
@@ -113,6 +144,9 @@ function syncVisibleRarity() {
   const card = document.querySelector("#screen-game .question-card");
   const meta = document.querySelector("#screen-game .question-meta");
   if (!card || !meta) return;
+
+  currentQuestion = question;
+  registerVisibleQuestion(question);
 
   let badge = document.querySelector("#burrRarityBadge");
   if (!badge) {
@@ -143,6 +177,72 @@ function syncVisibleRarity() {
   }
 }
 
+function registerVisibleQuestion(question) {
+  if (!question || !["rare", "legendary"].includes(question.rarity)) return;
+  const key = questionKey(question);
+  if (!key || raritySession.seen.has(key)) return;
+
+  raritySession.seen.add(key);
+  if (question.rarity === "rare") raritySession.rareTotal += 1;
+  if (question.rarity === "legendary") raritySession.legendaryTotal += 1;
+}
+
+function recordVisibleAnswer() {
+  if (!currentQuestion || !["rare", "legendary"].includes(currentQuestion.rarity)) return;
+  const feedback = document.querySelector("#feedbackBanner");
+  if (!feedback) return;
+
+  const hasVerdict = feedback.classList.contains("good") || feedback.classList.contains("bad");
+  if (!hasVerdict) return;
+
+  const key = questionKey(currentQuestion);
+  if (!key || raritySession.answered.has(key)) return;
+  raritySession.answered.add(key);
+
+  if (!feedback.classList.contains("good")) return;
+  if (currentQuestion.rarity === "rare") raritySession.rareCorrect += 1;
+  if (currentQuestion.rarity === "legendary") raritySession.legendaryCorrect += 1;
+}
+
+function renderRarityResult() {
+  const resultsPanel = document.querySelector("#screen-results .results-panel");
+  const playAgain = document.querySelector("#playAgainButton");
+  if (!resultsPanel || !playAgain) return;
+
+  let card = document.querySelector("#burrRarityResult");
+  if (!card) {
+    card = document.createElement("div");
+    card.id = "burrRarityResult";
+    card.className = "burr-rarity-result";
+    playAgain.insertAdjacentElement("beforebegin", card);
+  }
+
+  const parts = [];
+  if (raritySession.rareTotal) {
+    parts.push(`◆ Raras: ${raritySession.rareCorrect}/${raritySession.rareTotal}`);
+  }
+  if (raritySession.legendaryTotal) {
+    parts.push(raritySession.legendaryCorrect
+      ? "✦ Você acertou a lendária"
+      : "✦ A lendária escapou desta vez");
+  }
+
+  card.hidden = !parts.length;
+  card.innerHTML = parts.map((text) => `<span>${escapeHtml(text)}</span>`).join("");
+}
+
+function resetRaritySession(episodeId) {
+  raritySession.episodeId = episodeId || "";
+  raritySession.seen.clear();
+  raritySession.answered.clear();
+  raritySession.rareTotal = 0;
+  raritySession.rareCorrect = 0;
+  raritySession.legendaryTotal = 0;
+  raritySession.legendaryCorrect = 0;
+  currentQuestion = null;
+  lastLegendaryPrompt = "";
+}
+
 function findQuestion(prompt) {
   const key = normalize(prompt);
   if (!key) return null;
@@ -150,6 +250,10 @@ function findQuestion(prompt) {
   return episode?.discoveries?.find((item) => normalize(item.prompt) === key)
     || QUESTIONS.find((item) => normalize(item.prompt) === key)
     || null;
+}
+
+function questionKey(question) {
+  return `${normalize(question?.prompt)}|${normalize(question?.options?.[question?.correctIndex])}`;
 }
 
 function readEpisode() {
@@ -189,6 +293,15 @@ function normalize(value) {
     .trim();
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function injectStyles() {
   if (document.querySelector("#burrRarityStyles")) return;
   const style = document.createElement("style");
@@ -200,6 +313,10 @@ function injectStyles() {
     .question-card.burr-question-rare { box-shadow:0 18px 50px rgba(91,45,150,.13); }
     .question-card.burr-question-legendary { outline:3px solid #ffc53d; box-shadow:0 22px 65px rgba(255,166,31,.25); }
     .question-card.burr-legendary-arrival { animation:burrLegendaryArrival .9s ease both; }
+    .burr-rarity-result { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:14px 0 18px; }
+    .burr-rarity-result[hidden] { display:none; }
+    .burr-rarity-result span { padding:8px 11px; border-radius:999px; background:#f1eaff; color:#55248f; font-size:.72rem; font-weight:850; }
+    .burr-rarity-result span:last-child:not(:first-child) { background:#fff1c6; color:#674000; }
     @keyframes burrLegendaryArrival {
       0% { transform:scale(.97); filter:brightness(.85); }
       55% { transform:scale(1.018); filter:brightness(1.12); }
