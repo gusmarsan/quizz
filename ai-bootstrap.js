@@ -218,6 +218,6 @@ function setLoadingState(isLoading) {
   if (!startButton) return;
   startButton.disabled = isLoading;
   startButton.textContent = isLoading
-    ? "Criando 4 blocos de descobertas..."
+    ? "Criando e revisando 16 descobertas..."
     : originalButtonText;
 }
