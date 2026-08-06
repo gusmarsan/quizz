@@ -36,7 +36,7 @@ export default {
 
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
     if (request.method === "GET") {
-      return Response.json({ ok: true, service: "burrquizzz-ai", format: "episode", model: MODEL }, { headers });
+      return Response.json({ ok: true, service: "burrquizzz-ai", format: "episode-with-media", model: MODEL }, { headers });
     }
     if (request.method !== "POST") {
       return Response.json({ ok: false, error: "Use POST para gerar um episódio." }, { status: 405, headers });
@@ -49,9 +49,11 @@ export default {
       const recentQuestions = Array.isArray(body.recentQuestions)
         ? body.recentQuestions.filter((item) => typeof item === "string").slice(-50)
         : [];
+      const mediaItems = sanitizeMediaItems(body.mediaItems);
+      const visualCount = mediaItems.length ? Math.min(2, mediaItems.length, Math.max(1, Math.floor(count / 8))) : 0;
 
-      const schema = buildSchema(count);
-      const prompt = buildPrompt(count, recentQuestions);
+      const schema = buildSchema(count, mediaItems);
+      const prompt = buildPrompt(count, recentQuestions, mediaItems, visualCount);
 
       const result = await env.AI.run(MODEL, {
         messages: [
@@ -60,11 +62,11 @@ export default {
         ],
         response_format: { type: "json_schema", json_schema: schema },
         temperature: 0.85,
-        max_completion_tokens: 6000
+        max_completion_tokens: 6500
       });
 
       const parsed = extractJson(result);
-      const episode = validateEpisode(parsed?.episode, count);
+      const episode = validateEpisode(parsed?.episode, count, mediaItems, visualCount);
 
       return Response.json({
         ok: true,
@@ -84,10 +86,33 @@ export default {
   }
 };
 
-function buildPrompt(count, recentQuestions) {
+function sanitizeMediaItems(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((item) => item && item.status === "ready" && item.type === "image")
+    .slice(0, 12)
+    .map((item) => ({
+      id: String(item.id || "").trim(),
+      title: String(item.title || "").trim(),
+      subject: String(item.subject || "").trim(),
+      universe: String(item.universe || "Isso Existiu").trim(),
+      imageUrl: String(item.imageUrl || "").trim(),
+      sourcePage: String(item.sourcePage || "").trim(),
+      credit: String(item.credit || "").trim(),
+      tags: Array.isArray(item.tags) ? item.tags.map(String).slice(0, 8) : [],
+      questionSeeds: Array.isArray(item.questionSeeds) ? item.questionSeeds.map(String).slice(0, 4) : []
+    }))
+    .filter((item) => item.id && item.title && item.imageUrl);
+}
+
+function buildPrompt(count, recentQuestions, mediaItems, visualCount) {
   const recentBlock = recentQuestions.length
     ? recentQuestions.map((item) => `- ${item}`).join("\n")
     : "- Nenhuma descoberta anterior informada.";
+
+  const mediaBlock = mediaItems.length
+    ? mediaItems.map((item) => `- mediaId: ${item.id} | título: ${item.title} | assunto: ${item.subject} | universo: ${item.universe} | sugestões: ${item.questionSeeds.join(" / ")}`).join("\n")
+    : "- Nenhuma mídia disponível.";
 
   return `
 Você é o diretor de conteúdo e roteirista-chefe do Burrquizzz, um game show brasileiro para adultos.
@@ -104,7 +129,7 @@ TOM
 - Não force piadas em todas as descobertas.
 
 EPISÓDIO
-- Gere exatamente ${count} descobertas de múltipla escolha.
+- Gere exatamente ${count} descobertas.
 - Crie título curto e memorável, subtítulo, abertura e encerramento.
 - Escolha um apresentador entre: ${HOSTS.join(", ")}.
 - Misture pelo menos 6 universos diferentes desta lista:
@@ -113,6 +138,17 @@ ${UNIVERSES.map((item) => `- ${item}`).join("\n")}
 - Não repita artista, obra, pessoa, país, década ou estrutura dentro do episódio.
 - Ordem de dificuldade: cerca de 40% fáceis, 40% médias e 20% difíceis.
 - A última descoberta deve ser a mais memorável, não necessariamente a mais difícil.
+
+DESCOBERTAS VISUAIS
+- Gere exatamente ${visualCount} descobertas com type = "image_choice".
+- Nas visuais, use somente um mediaId da lista abaixo.
+- Não invente mídia, URL, crédito ou imagem.
+- A imagem deve ser necessária para responder, não apenas decorativa.
+- Use cada mediaId no máximo uma vez.
+- As demais descobertas devem usar type = "multiple_choice" e mediaId vazio.
+
+CATÁLOGO DISPONÍVEL
+${mediaBlock}
 
 DESCOBERTA PERFEITA
 Cada descoberta precisa ter:
@@ -133,7 +169,8 @@ Antes de entregar, revise silenciosamente cada descoberta. Descarte e reescreva 
 `;
 }
 
-function buildSchema(count) {
+function buildSchema(count, mediaItems) {
+  const mediaIds = mediaItems.map((item) => item.id);
   return {
     type: "object",
     additionalProperties: false,
@@ -155,6 +192,8 @@ function buildSchema(count) {
               type: "object",
               additionalProperties: false,
               properties: {
+                type: { type: "string", enum: ["multiple_choice", "image_choice"] },
+                mediaId: mediaIds.length ? { type: "string", enum: ["", ...mediaIds] } : { type: "string", enum: [""] },
                 category: { type: "string" },
                 difficulty: { type: "string", enum: ["facil", "media", "dificil"] },
                 prompt: { type: "string" },
@@ -162,7 +201,7 @@ function buildSchema(count) {
                 correctIndex: { type: "integer", minimum: 0, maximum: 3 },
                 explanation: { type: "string" }
               },
-              required: ["category", "difficulty", "prompt", "options", "correctIndex", "explanation"]
+              required: ["type", "mediaId", "category", "difficulty", "prompt", "options", "correctIndex", "explanation"]
             }
           }
         },
@@ -181,33 +220,51 @@ function extractJson(result) {
   return JSON.parse(raw.trim().replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/```$/, "").trim());
 }
 
-function validateEpisode(input, expectedCount) {
+function validateEpisode(input, expectedCount, mediaItems, expectedVisualCount) {
   if (!input || !Array.isArray(input.discoveries)) throw new Error("Episódio inválido.");
 
+  const mediaMap = new Map(mediaItems.map((item) => [item.id, item]));
+  const usedMedia = new Set();
   const discoveries = [];
   const seen = new Set();
+
   for (const item of input.discoveries) {
     const prompt = String(item?.prompt || "").trim();
     const options = Array.isArray(item?.options) ? item.options.map((option) => String(option).trim()) : [];
     const correctIndex = Number(item?.correctIndex);
     const key = normalize(prompt);
+    const requestedType = item?.type === "image_choice" ? "image_choice" : "multiple_choice";
+    const mediaId = String(item?.mediaId || "").trim();
+    const media = requestedType === "image_choice" ? mediaMap.get(mediaId) : null;
 
     if (!prompt || key.length < 12 || seen.has(key) || options.length !== 4 || options.some((option) => !option) || new Set(options.map(normalize)).size !== 4 || !Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex > 3) continue;
+    if (requestedType === "image_choice" && (!media || usedMedia.has(mediaId))) continue;
 
     seen.add(key);
+    if (media) usedMedia.add(mediaId);
+
     discoveries.push({
       id: `ai-${crypto.randomUUID()}`,
-      type: "multiple_choice",
-      category: String(item.category || "Mundo Bizarro").trim(),
+      type: media ? "image_choice" : "multiple_choice",
+      category: String(item.category || media?.universe || "Mundo Bizarro").trim(),
       difficulty: ["facil", "media", "dificil"].includes(item.difficulty) ? item.difficulty : "media",
       prompt,
       options,
       correctIndex,
-      explanation: String(item.explanation || "").trim()
+      explanation: String(item.explanation || "").trim(),
+      ...(media ? {
+        mediaId,
+        image: media.imageUrl,
+        imageCredit: media.credit,
+        imageSource: media.sourcePage,
+        supportText: media.credit ? `Imagem: ${media.credit}` : ""
+      } : {})
     });
   }
 
   if (discoveries.length < expectedCount) throw new Error(`Foram criadas apenas ${discoveries.length} descobertas válidas.`);
+  const visualCount = discoveries.filter((item) => item.type === "image_choice").length;
+  if (visualCount < expectedVisualCount) throw new Error(`Foram criadas apenas ${visualCount} descobertas visuais válidas.`);
 
   return {
     id: `episode-${crypto.randomUUID()}`,
