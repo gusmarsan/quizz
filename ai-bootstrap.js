@@ -7,59 +7,39 @@ const AI_ENDPOINT = "https://quiz-duelo-ai.gustavomarsan.workers.dev/";
 const MEDIA_MANIFEST_URL = "./assets/media/manifest.json";
 const RECENT_STORAGE_KEY = "quizDuelRecentAIQuestions";
 const EPISODE_STORAGE_KEY = "burrquizzzCurrentEpisode";
+const NEXT_EPISODE_STORAGE_KEY = "burrquizzzNextEpisode";
+const NEXT_EPISODE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 const AI_QUESTION_COUNT = 16;
 const MAX_RECENT_QUESTIONS = 50;
 
 const startButton = document.querySelector("#startSoloButton");
+const gameScreen = document.querySelector("#screen-game");
+const soloSetupScreen = document.querySelector("#screen-solo-setup");
 const originalButtonText = startButton?.textContent || "Começar";
 
+let mediaItemsCache = [];
+let prefetchPromise = null;
+let hasStartedEpisode = false;
+
+observeEpisodeFlow();
 prepareAIQuestions();
 
 async function prepareAIQuestions() {
   setLoadingState(true);
 
   try {
-    const [recentQuestions, mediaItems] = await Promise.all([
-      Promise.resolve(getRecentQuestions()),
-      loadMediaItems()
-    ]);
+    mediaItemsCache = await loadMediaItems();
+    const cachedEpisode = consumeNextEpisode();
 
-    const response = await fetch(AI_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        count: AI_QUESTION_COUNT,
-        recentQuestions,
-        mediaItems
-      })
-    });
-
-    if (!response.ok) throw new Error(`O gerador respondeu com status ${response.status}.`);
-
-    const data = await response.json();
-    const episode = normalizeEpisode(data);
-    const generatedQuestions = validateQuestions(episode.discoveries);
-
-    if (generatedQuestions.length < AI_QUESTION_COUNT) {
-      throw new Error("O gerador não devolveu 16 descobertas válidas.");
+    if (cachedEpisode) {
+      applyEpisode(cachedEpisode);
+      document.documentElement.dataset.episodeDelivery = "cache";
+      return;
     }
 
-    const blocks = normalizeBlocks(episode.blocks, generatedQuestions);
-    const normalizedEpisode = {
-      ...episode,
-      blocks,
-      discoveries: generatedQuestions
-    };
-
-    QUESTIONS.splice(0, QUESTIONS.length, ...generatedQuestions);
-    saveRecentQuestions(generatedQuestions.map((question) => question.prompt));
-    saveEpisode(normalizedEpisode);
-    document.documentElement.dataset.questionSource = "ai";
-    document.documentElement.dataset.visualDiscoveries = String(
-      generatedQuestions.filter((question) => question.type === "image_choice").length
-    );
-    document.documentElement.dataset.episodeBlocks = "4";
-    window.dispatchEvent(new CustomEvent("burrquizzz:episode-ready", { detail: normalizedEpisode }));
+    const episode = await requestEpisode(getRecentQuestions(), mediaItemsCache);
+    applyEpisode(episode);
+    document.documentElement.dataset.episodeDelivery = "live";
   } catch (error) {
     console.warn("Não foi possível carregar o episódio da IA. O banco local será usado.", error);
     localStorage.removeItem(EPISODE_STORAGE_KEY);
@@ -67,6 +47,137 @@ async function prepareAIQuestions() {
   } finally {
     setLoadingState(false);
   }
+}
+
+async function requestEpisode(recentQuestions, mediaItems) {
+  const response = await fetch(AI_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      count: AI_QUESTION_COUNT,
+      recentQuestions,
+      mediaItems
+    })
+  });
+
+  if (!response.ok) throw new Error(`O gerador respondeu com status ${response.status}.`);
+  return normalizeEpisode(await response.json());
+}
+
+function applyEpisode(episode) {
+  const generatedQuestions = validateQuestions(episode.discoveries);
+
+  if (generatedQuestions.length < AI_QUESTION_COUNT) {
+    throw new Error("O gerador não devolveu 16 descobertas válidas.");
+  }
+
+  const normalizedEpisode = {
+    ...episode,
+    blocks: normalizeBlocks(episode.blocks, generatedQuestions),
+    discoveries: generatedQuestions
+  };
+
+  QUESTIONS.splice(0, QUESTIONS.length, ...generatedQuestions);
+  saveRecentQuestions(generatedQuestions.map((question) => question.prompt));
+  saveEpisode(normalizedEpisode);
+  document.documentElement.dataset.questionSource = "ai";
+  document.documentElement.dataset.visualDiscoveries = String(
+    generatedQuestions.filter((question) => question.type === "image_choice").length
+  );
+  document.documentElement.dataset.episodeBlocks = "4";
+  window.dispatchEvent(new CustomEvent("burrquizzz:episode-ready", { detail: normalizedEpisode }));
+}
+
+function observeEpisodeFlow() {
+  if (!gameScreen || !soloSetupScreen) return;
+
+  const observer = new MutationObserver(() => {
+    if (gameScreen.classList.contains("active")) {
+      hasStartedEpisode = true;
+      window.setTimeout(() => prepareNextEpisode(), 1200);
+      return;
+    }
+
+    if (hasStartedEpisode && soloSetupScreen.classList.contains("active")) {
+      activatePreparedEpisode();
+    }
+  });
+
+  observer.observe(gameScreen, { attributes: true, attributeFilter: ["class"] });
+  observer.observe(soloSetupScreen, { attributes: true, attributeFilter: ["class"] });
+}
+
+async function prepareNextEpisode() {
+  if (prefetchPromise || readNextEpisode()) return prefetchPromise;
+
+  prefetchPromise = (async () => {
+    try {
+      const episode = await requestEpisode(getRecentQuestions(), mediaItemsCache);
+      const checkedQuestions = validateQuestions(episode.discoveries);
+      if (checkedQuestions.length !== AI_QUESTION_COUNT) {
+        throw new Error("O próximo episódio não trouxe 16 descobertas válidas.");
+      }
+
+      const prepared = {
+        ...episode,
+        blocks: normalizeBlocks(episode.blocks, checkedQuestions),
+        discoveries: checkedQuestions
+      };
+
+      localStorage.setItem(NEXT_EPISODE_STORAGE_KEY, JSON.stringify({
+        createdAt: Date.now(),
+        episode: prepared
+      }));
+      document.documentElement.dataset.nextEpisodeReady = "true";
+
+      if (hasStartedEpisode && soloSetupScreen?.classList.contains("active")) {
+        activatePreparedEpisode();
+      }
+    } catch (error) {
+      console.warn("O próximo episódio não pôde ser preparado em segundo plano.", error);
+      document.documentElement.dataset.nextEpisodeReady = "false";
+    } finally {
+      prefetchPromise = null;
+    }
+  })();
+
+  return prefetchPromise;
+}
+
+function activatePreparedEpisode() {
+  const episode = consumeNextEpisode();
+  if (!episode) return false;
+
+  try {
+    applyEpisode(episode);
+    document.documentElement.dataset.episodeDelivery = "prefetched";
+    document.documentElement.dataset.nextEpisodeReady = "false";
+    return true;
+  } catch (error) {
+    console.warn("O episódio pré-carregado era inválido e foi descartado.", error);
+    return false;
+  }
+}
+
+function readNextEpisode() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(NEXT_EPISODE_STORAGE_KEY) || "null");
+    if (!stored?.episode || !Number.isFinite(stored.createdAt)) return null;
+    if (Date.now() - stored.createdAt > NEXT_EPISODE_MAX_AGE_MS) {
+      localStorage.removeItem(NEXT_EPISODE_STORAGE_KEY);
+      return null;
+    }
+    return stored.episode;
+  } catch {
+    localStorage.removeItem(NEXT_EPISODE_STORAGE_KEY);
+    return null;
+  }
+}
+
+function consumeNextEpisode() {
+  const episode = readNextEpisode();
+  if (episode) localStorage.removeItem(NEXT_EPISODE_STORAGE_KEY);
+  return episode;
 }
 
 async function loadMediaItems() {
@@ -218,6 +329,6 @@ function setLoadingState(isLoading) {
   if (!startButton) return;
   startButton.disabled = isLoading;
   startButton.textContent = isLoading
-    ? "Criando e revisando 16 descobertas..."
+    ? "Criando e conferindo as descobertas..."
     : originalButtonText;
 }
