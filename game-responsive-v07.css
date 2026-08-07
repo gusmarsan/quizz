@@ -1,0 +1,392 @@
+/* Burrquizzz v0.7 — responsive game screen without structural redesign */
+
+#screen-game {
+  width: 100%;
+  margin-inline: auto;
+}
+
+body:has(#screen-game.active) .app-shell {
+  padding-top: max(14px, env(safe-area-inset-top));
+}
+
+body:has(#screen-game.active) .topbar {
+  margin-bottom: 18px;
+}
+
+#screen-game .game-header {
+  min-width: 0;
+}
+
+#screen-game .score-chip,
+#screen-game .opponent-badge {
+  min-width: 0;
+}
+
+#screen-game .opponent-badge span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#screen-game .question-card {
+  width: 100%;
+  min-width: 0;
+}
+
+#screen-game .question-card h2 {
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+#screen-game .question-support,
+#screen-game .answer-button,
+#screen-game .match-left {
+  overflow-wrap: anywhere;
+}
+
+#screen-game .answer-button {
+  width: 100%;
+}
+
+#screen-game .input-card input,
+#screen-game .match-row select {
+  min-width: 0;
+}
+
+@media (max-width: 680px) {
+  body:has(#screen-game.active) .app-shell {
+    padding-inline: 12px;
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+
+  body:has(#screen-game.active) .topbar {
+    margin-bottom: 12px;
+  }
+
+  #screen-game .game-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 9px;
+  }
+
+  #screen-game .game-header > .score-chip:first-child {
+    grid-column: 1;
+  }
+
+  #screen-game .opponent-badge {
+    grid-column: 2;
+    justify-self: stretch;
+    padding-inline: 6px;
+    font-size: 0.74rem;
+  }
+
+  #screen-game .game-header > .score-chip:last-child {
+    grid-column: 3;
+  }
+
+  #screen-game .score-chip {
+    padding-inline: 0;
+  }
+
+  #screen-game .score-chip small {
+    font-size: 0.58rem;
+    letter-spacing: 0.07em;
+  }
+
+  #screen-game .score-chip strong {
+    font-size: 1.02rem;
+  }
+
+  #screen-game .timer-track {
+    height: 7px;
+    margin-bottom: 11px;
+  }
+
+  #screen-game .question-card {
+    padding: 19px 15px;
+    border-radius: 17px;
+  }
+
+  #screen-game .question-meta {
+    gap: 6px;
+  }
+
+  #screen-game .category-chip,
+  #screen-game .type-chip {
+    padding: 5px 7px;
+    font-size: 0.61rem;
+  }
+
+  #screen-game .question-card h2 {
+    margin: 14px 0 12px;
+    font-size: clamp(1.42rem, 6.4vw, 1.85rem);
+    line-height: 1.13;
+  }
+
+  #screen-game .question-support {
+    margin-bottom: 12px;
+    font-size: 0.92rem;
+    line-height: 1.42;
+  }
+
+  #screen-game .question-image-wrap {
+    margin-bottom: 13px;
+    border-radius: 14px;
+  }
+
+  #screen-game .answers-stack {
+    gap: 7px;
+  }
+
+  #screen-game .answer-button {
+    min-height: 54px;
+    gap: 9px;
+    padding: 9px 11px;
+    border-radius: 11px;
+    font-size: 0.95rem;
+    line-height: 1.25;
+  }
+
+  #screen-game .answer-letter {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+  }
+
+  #screen-game .input-card,
+  #screen-game .match-card {
+    padding-top: 16px;
+  }
+
+  #screen-game .input-card p,
+  #screen-game .match-card p {
+    margin-bottom: 10px;
+  }
+
+  #screen-game .submit-row {
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  #screen-game .submit-row .primary-button,
+  #screen-game .submit-row .ghost-button {
+    min-height: 46px;
+  }
+
+  #screen-game .match-rows,
+  #screen-game .match-row {
+    gap: 8px;
+  }
+
+  #screen-game .match-left {
+    padding: 10px 11px;
+  }
+
+  #screen-game .match-row select {
+    height: 46px;
+  }
+
+  #screen-game .feedback-banner {
+    min-height: 44px;
+    margin-top: 8px;
+    font-size: 0.9rem;
+    line-height: 1.3;
+  }
+}
+
+@media (max-width: 420px) {
+  body:has(#screen-game.active) .topbar {
+    margin-bottom: 9px;
+  }
+
+  body:has(#screen-game.active) .brand-mark {
+    width: 36px;
+    height: 36px;
+  }
+
+  #screen-game .game-header {
+    grid-template-columns: min-content minmax(72px, 1fr) min-content;
+    gap: 6px;
+  }
+
+  #screen-game .opponent-badge {
+    gap: 5px;
+    font-size: 0.69rem;
+  }
+
+  #screen-game .opponent-badge .status-dot {
+    width: 8px;
+    height: 8px;
+  }
+
+  #screen-game .question-card {
+    padding: 17px 13px;
+  }
+
+  #screen-game .question-card h2 {
+    font-size: clamp(1.32rem, 6.8vw, 1.62rem);
+  }
+
+  #screen-game .answer-button {
+    min-height: 50px;
+    font-size: 0.91rem;
+  }
+}
+
+@media (max-height: 740px) {
+  body:has(#screen-game.active) .app-shell {
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+
+  body:has(#screen-game.active) .topbar {
+    margin-bottom: 8px;
+  }
+
+  #screen-game .game-header {
+    margin-bottom: 7px;
+  }
+
+  #screen-game .timer-track {
+    margin-bottom: 8px;
+  }
+
+  #screen-game .question-card {
+    padding-block: 16px;
+  }
+
+  #screen-game .question-card h2 {
+    margin-block: 11px 9px;
+    font-size: clamp(1.3rem, 4.8vw, 1.78rem);
+  }
+
+  #screen-game .question-support {
+    margin-bottom: 9px;
+  }
+
+  #screen-game .answers-stack {
+    gap: 6px;
+  }
+
+  #screen-game .answer-button {
+    min-height: 49px;
+    padding-block: 8px;
+  }
+
+  #screen-game .question-image-wrap {
+    width: min(100%, 560px);
+    margin: 0 auto 10px;
+  }
+
+  #screen-game .feedback-banner {
+    min-height: 40px;
+    margin-top: 6px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  body:has(#screen-game.active) .app-shell {
+    width: min(980px, 100%);
+    padding-top: max(7px, env(safe-area-inset-top));
+    padding-inline: max(14px, env(safe-area-inset-left));
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  body:has(#screen-game.active) .topbar {
+    margin-bottom: 5px;
+  }
+
+  body:has(#screen-game.active) .brand-mark {
+    width: 34px;
+    height: 34px;
+  }
+
+  body:has(#screen-game.active) .brand-text {
+    display: none;
+  }
+
+  #screen-game .game-header {
+    margin-bottom: 5px;
+  }
+
+  #screen-game .score-chip small {
+    font-size: 0.55rem;
+  }
+
+  #screen-game .score-chip strong {
+    font-size: 0.95rem;
+  }
+
+  #screen-game .timer-track {
+    height: 5px;
+    margin-bottom: 6px;
+  }
+
+  #screen-game .question-card {
+    padding: 13px 15px;
+    border-radius: 14px;
+  }
+
+  #screen-game .category-chip,
+  #screen-game .type-chip {
+    padding: 4px 7px;
+    font-size: 0.57rem;
+  }
+
+  #screen-game .question-card h2 {
+    margin: 8px 0 7px;
+    font-size: clamp(1.18rem, 3vw, 1.48rem);
+    line-height: 1.1;
+  }
+
+  #screen-game .question-support {
+    margin-bottom: 7px;
+    font-size: 0.86rem;
+  }
+
+  #screen-game .question-image-wrap {
+    width: min(100%, 420px);
+    margin: 0 auto 8px;
+  }
+
+  #screen-game .answers-stack {
+    gap: 5px;
+  }
+
+  #screen-game .answer-button {
+    min-height: 44px;
+    padding: 6px 10px;
+    font-size: 0.88rem;
+  }
+
+  #screen-game .answer-letter {
+    width: 29px;
+    height: 29px;
+  }
+
+  #screen-game .input-card,
+  #screen-game .match-card {
+    padding-top: 11px;
+  }
+
+  #screen-game .match-rows,
+  #screen-game .match-row {
+    gap: 6px;
+  }
+
+  #screen-game .match-left {
+    padding: 8px 10px;
+  }
+
+  #screen-game .match-row select {
+    height: 44px;
+  }
+
+  #screen-game .feedback-banner {
+    min-height: 34px;
+    margin-top: 4px;
+    font-size: 0.82rem;
+  }
+}
