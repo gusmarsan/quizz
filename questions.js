@@ -1,4 +1,4 @@
-// Burrquizzz v2.5.0 — 1.090 perguntas ativas, incluindo 100 perguntas visuais verificadas.
+// Burrquizzz v2.5.1 — 1.090 perguntas ativas, incluindo 100 perguntas visuais verificadas e locais.
 // Diretriz editorial: manter e expandir estes temas em futuras renovações.
 // Temas-base: curiosidades inúteis, internet nostálgica, TV e nostalgia, TV brasileira,
 // cinema, séries, animação, música brasileira, pop internacional, rock e metal, games,
@@ -28,7 +28,7 @@ import batch18a from "./question-bank/batch-18a.js?v=2.4.0";
 import batch18b from "./question-bank/batch-18b.js?v=2.4.0";
 import batch19 from "./question-bank/batch-19.js?v=2.4.0";
 import batch20 from "./question-bank/batch-20.js?v=2.4.0";
-import visualQuestions from "./question-bank/visual-batch.js?v=2.5.0";
+import visualQuestions from "./question-bank/visual-batch.js?v=2.5.1";
 
 const BASE_QUESTIONS = [
   ...batch01,
