@@ -1,4 +1,4 @@
-const APP_VERSION = "0.72";
+const APP_VERSION = "0.73";
 
 mountVersion();
 
@@ -36,12 +36,12 @@ function mountVersion() {
         color: rgba(255,255,255,.76);
         font: 800 .6875rem/1 system-ui, sans-serif;
         letter-spacing: .05em;
-        box-shadow: 0 4px 12px rgba(0,0,0,.1);
-        backdrop-filter: blur(8px);
-        pointer-events: none;
+        box-shadow:0 4px 12px rgba(0,0,0,.1);
+        backdrop-filter:blur(8px);
+        pointer-events:none;
       }
       @media (max-width: 520px) {
-        .burr-app-version { right: 7px; bottom: 6px; opacity:.76; }
+        .burr-app-version { right:7px; bottom:6px; opacity:.76; }
       }
     `;
     document.head.appendChild(style);
