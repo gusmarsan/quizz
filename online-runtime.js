@@ -30,9 +30,8 @@ const FIREBASE_CONFIG = {
 const ROOM_COLLECTION = "battleshipRooms";
 const GAME_TYPE = "burrquizzz";
 const NAME_STORAGE_KEY = "quizDuelPlayerName";
-const QUESTION_MS = 18000;
+const QUESTION_MS = 30000;
 const FEEDBACK_MS = 2600;
-const ROUND_MS = QUESTION_MS + FEEDBACK_MS;
 const TOTAL_DISCOVERIES = 16;
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
@@ -56,6 +55,8 @@ let currentPhase = "";
 let loop = null;
 let locked = false;
 let localAnswers = {};
+let transitionPending = false;
+let resultsShown = false;
 
 boot();
 
@@ -75,7 +76,7 @@ function hideTechnicalSetup() {
   const onlineCardTitle = $("#onlineModeButton .mode-title");
   const onlineCardCopy = $("#onlineModeButton .mode-copy");
   if (onlineCardTitle) onlineCardTitle.textContent = "Jogar em dupla";
-  if (onlineCardCopy) onlineCardCopy.textContent = "Crie uma sala e comece assim que a outra pessoa entrar.";
+  if (onlineCardCopy) onlineCardCopy.textContent = "30 segundos por pergunta ou resultado assim que os dois responderem.";
 }
 
 function interceptOnlineFlow() {
@@ -166,12 +167,16 @@ async function createRoom() {
     const reference = doc(db, ROOM_COLLECTION, code);
     await setDoc(reference, {
       gameType: GAME_TYPE,
-      version: 1,
+      version: 2,
       status: "waiting",
       hostUid: user.uid,
       createdAt: serverTimestamp(),
       startAt: null,
       round: 1,
+      currentIndex: 0,
+      phase: "waiting",
+      questionStartedAt: null,
+      feedbackStartedAt: null,
       player1: { uid: user.uid, name },
       player2: null,
       questions: selected,
@@ -236,13 +241,19 @@ function connectRoom(code) {
     }
 
     roomData = snapshot.data();
+    transitionPending = false;
     renderLobby();
 
     if (role === "host" && roomData.status === "waiting" && roomData.player2 && !startingRoom) {
       startingRoom = true;
+      const startAt = Date.now() + 4200;
       updateDoc(roomReference, {
         status: "playing",
-        startAt: Date.now() + 4200
+        startAt,
+        currentIndex: 0,
+        phase: "question",
+        questionStartedAt: startAt,
+        feedbackStartedAt: null
       }).catch(showError).finally(() => {
         startingRoom = false;
       });
@@ -263,7 +274,7 @@ function connectRoom(code) {
 }
 
 function renderLobby() {
-  if (!roomCode) return;
+  if (!roomCode || roomData?.status === "playing" || roomData?.status === "finished") return;
   showScreen("screen-lobby");
 
   const codeCard = $("#copyRoomCodeButton");
@@ -283,7 +294,7 @@ function renderLobby() {
   const hint = $("#lobbyHint");
   if (hint) {
     hint.textContent = roomData?.player2
-      ? "A outra pessoa entrou. O duelo começa automaticamente."
+      ? "A outra pessoa entrou. O duelo começa automaticamente. São 30 segundos por pergunta."
       : "Compartilhe o convite. O jogo começa assim que a outra pessoa entrar.";
   }
 }
@@ -319,10 +330,11 @@ async function startOnlineGame() {
   }
 
   renderedIndex = -1;
-  currentIndex = 0;
+  currentIndex = Number(roomData.currentIndex || 0);
   currentPhase = "";
   locked = false;
   localAnswers = roomData?.answers?.[user.uid] || {};
+  resultsShown = false;
 
   const opponent = role === "host" ? roomData.player2 : roomData.player1;
   $("#opponentName").textContent = opponent?.name || "Adversário";
@@ -335,7 +347,7 @@ async function startOnlineGame() {
 
 function runCountdown(startAt) {
   showScreen("screen-countdown");
-  $("#countdownMessage").textContent = "A outra pessoa entrou. Prepare-se.";
+  $("#countdownMessage").textContent = "30 segundos ou até os dois responderem.";
 
   return new Promise((resolve) => {
     const tick = () => {
@@ -352,24 +364,42 @@ function runCountdown(startAt) {
   });
 }
 
+function bothPlayersAnswered(data, index) {
+  const firstUid = data?.player1?.uid;
+  const secondUid = data?.player2?.uid;
+  return Boolean(
+    firstUid &&
+    secondUid &&
+    data?.answers?.[firstUid]?.[index] !== undefined &&
+    data?.answers?.[secondUid]?.[index] !== undefined
+  );
+}
+
 function runGameLoop() {
   const tick = () => {
-    if (!roomData || roomData.status !== "playing") return;
+    if (!roomData) return;
+    if (roomData.status === "finished") {
+      showOnlineResults();
+      return;
+    }
+    if (roomData.status !== "playing") return;
 
-    const elapsed = Date.now() - roomData.startAt;
-    if (elapsed < 0) {
+    const now = Date.now();
+    const index = Math.max(0, Number(roomData.currentIndex || 0));
+    const phase = roomData.phase === "feedback" ? "feedback" : "question";
+    const questionStartedAt = Number(roomData.questionStartedAt || roomData.startAt || now);
+    const feedbackStartedAt = Number(roomData.feedbackStartedAt || now);
+
+    if (now < questionStartedAt) {
       loop = requestAnimationFrame(tick);
       return;
     }
 
-    const index = Math.floor(elapsed / ROUND_MS);
     if (index >= questions.length) {
-      finishOnlineGame();
+      requestNextQuestion(Math.max(0, questions.length - 1));
+      loop = requestAnimationFrame(tick);
       return;
     }
-
-    const roundElapsed = elapsed % ROUND_MS;
-    const phase = roundElapsed < QUESTION_MS ? "question" : "feedback";
 
     if (renderedIndex !== index) {
       renderedIndex = index;
@@ -378,17 +408,98 @@ function runGameLoop() {
       renderQuestion(questions[index], index);
     }
 
-    if (phase !== currentPhase) {
-      currentPhase = phase;
-      if (phase === "feedback") showFeedback(index);
+    if (phase === "question") {
+      currentPhase = "question";
+      const elapsed = Math.max(0, now - questionStartedAt);
+      const ratio = Math.max(0, 1 - elapsed / QUESTION_MS);
+      $("#timerBar").style.transform = `scaleX(${ratio})`;
+
+      if (bothPlayersAnswered(roomData, index) || elapsed >= QUESTION_MS) {
+        requestFeedback(index);
+      }
+    } else {
+      $("#timerBar").style.transform = "scaleX(0)";
+      if (currentPhase !== "feedback") {
+        currentPhase = "feedback";
+        showFeedback(index);
+      }
+      if (now - feedbackStartedAt >= FEEDBACK_MS) requestNextQuestion(index);
     }
 
-    const ratio = phase === "question" ? Math.max(0, 1 - roundElapsed / QUESTION_MS) : 0;
-    $("#timerBar").style.transform = `scaleX(${ratio})`;
     loop = requestAnimationFrame(tick);
   };
 
   tick();
+}
+
+async function requestFeedback(index) {
+  if (transitionPending || !roomReference) return;
+  transitionPending = true;
+  const now = Date.now();
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(roomReference);
+      if (!snapshot.exists()) return;
+      const data = snapshot.data();
+      if (data.status !== "playing") return;
+      if (Number(data.currentIndex || 0) !== index) return;
+      if (data.phase === "feedback") return;
+
+      const startedAt = Number(data.questionStartedAt || data.startAt || now);
+      const expired = now - startedAt >= QUESTION_MS;
+      if (!bothPlayersAnswered(data, index) && !expired) return;
+
+      transaction.update(roomReference, {
+        phase: "feedback",
+        feedbackStartedAt: now
+      });
+    });
+  } catch (error) {
+    console.warn("Não foi possível mostrar o resultado agora.", error);
+  } finally {
+    transitionPending = false;
+  }
+}
+
+async function requestNextQuestion(index) {
+  if (transitionPending || !roomReference) return;
+  transitionPending = true;
+  const now = Date.now();
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(roomReference);
+      if (!snapshot.exists()) return;
+      const data = snapshot.data();
+      if (data.status !== "playing") return;
+      if (Number(data.currentIndex || 0) !== index) return;
+      if (data.phase !== "feedback") return;
+
+      const feedbackStartedAt = Number(data.feedbackStartedAt || now);
+      if (now - feedbackStartedAt < FEEDBACK_MS) return;
+
+      const nextIndex = index + 1;
+      if (nextIndex >= questions.length) {
+        transaction.update(roomReference, {
+          status: "finished",
+          finishedAt: now
+        });
+        return;
+      }
+
+      transaction.update(roomReference, {
+        currentIndex: nextIndex,
+        phase: "question",
+        questionStartedAt: now,
+        feedbackStartedAt: null
+      });
+    });
+  } catch (error) {
+    console.warn("Não foi possível avançar para a próxima pergunta.", error);
+  } finally {
+    transitionPending = false;
+  }
 }
 
 function renderQuestion(question, index) {
@@ -452,7 +563,10 @@ async function submitAnswer(selectedIndex) {
   lockAnswers();
 
   const question = questions[currentIndex];
-  const elapsedMs = Math.max(0, Math.min(QUESTION_MS, Date.now() - (roomData.startAt + currentIndex * ROUND_MS)));
+  const startedAt = Number(roomData.questionStartedAt || roomData.startAt || Date.now());
+  const elapsedMs = Math.max(0, Math.min(QUESTION_MS, Date.now() - startedAt));
+  if (elapsedMs >= QUESTION_MS) return;
+
   const payload = {
     value: selectedIndex,
     correct: selectedIndex === question.correctIndex,
@@ -465,6 +579,9 @@ async function submitAnswer(selectedIndex) {
       const snapshot = await transaction.get(roomReference);
       if (!snapshot.exists()) throw new Error("A sala foi encerrada.");
       const data = snapshot.data();
+      if (data.status !== "playing" || data.phase === "feedback") return;
+      if (Number(data.currentIndex || 0) !== currentIndex) return;
+
       const answers = data.answers || {};
       const mine = answers[user.uid] || {};
       if (mine[currentIndex]) return;
@@ -482,7 +599,7 @@ async function submitAnswer(selectedIndex) {
 
     localAnswers[currentIndex] = payload;
     showSentState(payload);
-    updateOwnScore();
+    requestFeedback(currentIndex);
   } catch (error) {
     locked = false;
     $$("#answersArea .answer-button").forEach((button) => { button.disabled = false; });
@@ -492,7 +609,7 @@ async function submitAnswer(selectedIndex) {
 
 function showSentState(answer) {
   const feedback = $("#feedbackBanner");
-  feedback.textContent = `Resposta enviada em ${(answer.elapsedMs / 1000).toFixed(1).replace(".", ",")}s`;
+  feedback.textContent = `Resposta enviada em ${(answer.elapsedMs / 1000).toFixed(1).replace(".", ",")}s. Aguardando a outra pessoa.`;
   feedback.className = "feedback-banner";
 }
 
@@ -537,20 +654,9 @@ function updateOwnScore() {
   $("#currentScore").textContent = String(score);
 }
 
-async function finishOnlineGame() {
-  stopGameLoop();
-  if (role === "host" && roomData?.status === "playing") {
-    try {
-      await updateDoc(roomReference, { status: "finished", finishedAt: Date.now() });
-    } catch (error) {
-      console.warn(error);
-    }
-  }
-  showOnlineResults();
-}
-
 function showOnlineResults() {
-  if (!roomData || !user) return;
+  if (!roomData || !user || resultsShown) return;
+  resultsShown = true;
   stopGameLoop();
 
   const players = [roomData.player1, roomData.player2].filter(Boolean);
@@ -620,6 +726,8 @@ function cleanupRoomState(clearUrl = true) {
   currentRoundKey = "";
   questions = [];
   localAnswers = {};
+  transitionPending = false;
+  resultsShown = false;
   if (clearUrl) history.replaceState(null, "", location.pathname);
 }
 
