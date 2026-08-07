@@ -22,6 +22,48 @@ const MAX_SIDE = 1200;
 const TARGET_BYTES = 220 * 1024;
 const MIN_QUALITY = 48;
 const START_QUALITY = 80;
+const REQUEST_GAP_MS = 1800;
+const MAX_FETCH_ATTEMPTS = 7;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchImage(url, id) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        redirect: "follow",
+        headers: {
+          "User-Agent": "BurrquizzzVisualAssetBuilder/1.0 (https://github.com/gusmarsan/quizz)",
+          Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
+        }
+      });
+
+      if (response.ok) return response;
+
+      const retryAfter = Number(response.headers.get("retry-after"));
+      const retryable = response.status === 429 || response.status >= 500;
+      if (!retryable) throw new Error(`HTTP ${response.status}`);
+
+      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+        ? retryAfter * 1000
+        : Math.min(45000, 3500 * attempt * attempt);
+
+      lastError = new Error(`HTTP ${response.status}`);
+      console.warn(`${id}: tentativa ${attempt}/${MAX_FETCH_ATTEMPTS} recebeu HTTP ${response.status}; aguardando ${Math.round(waitMs / 1000)}s.`);
+      await sleep(waitMs);
+    } catch (error) {
+      lastError = error;
+      if (attempt === MAX_FETCH_ATTEMPTS) break;
+      const waitMs = Math.min(30000, 2500 * attempt);
+      console.warn(`${id}: tentativa ${attempt}/${MAX_FETCH_ATTEMPTS} falhou (${error.message}); aguardando ${Math.round(waitMs / 1000)}s.`);
+      await sleep(waitMs);
+    }
+  }
+
+  throw lastError || new Error("falha ao baixar imagem");
+}
 
 for (const [index, question] of VISUAL_QUESTIONS.entries()) {
   const id = String(question.id || "").trim();
@@ -36,17 +78,8 @@ for (const [index, question] of VISUAL_QUESTIONS.entries()) {
   const outputPath = path.join(outputDir, outputName);
 
   try {
-    const response = await fetch(sourceImage, {
-      redirect: "follow",
-      headers: {
-        "User-Agent": "BurrquizzzVisualAssetBuilder/1.0 (https://github.com/gusmarsan/quizz)",
-        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+    if (index > 0) await sleep(REQUEST_GAP_MS);
+    const response = await fetchImage(sourceImage, id);
 
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.startsWith("image/")) {
