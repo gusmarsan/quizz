@@ -6,7 +6,7 @@ import {
   onSnapshot,
   runTransaction
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-import { QUESTIONS } from "./questions.js";
+import { DUEL_QUESTIONS } from "./duel-question-bank-v252.js";
 
 const FIREBASE_APP_NAME = "burrquizzz-online-v231";
 const ROOM_COLLECTION = "battleshipRooms";
@@ -183,12 +183,16 @@ async function requestRematch() {
 
 function buildQuestionRound(previousQuestions) {
   const previousIds = new Set(previousQuestions.map(questionIdentity));
-  const available = QUESTIONS.filter(
+  const available = DUEL_QUESTIONS.filter(
     (question) => question && Array.isArray(question.options) && question.options.length === 4
   );
 
-  const fresh = shuffle(available.filter((question) => !previousIds.has(questionIdentity(question))));
-  const fallback = shuffle(available.filter((question) => previousIds.has(questionIdentity(question))));
+  const fresh = shuffle(
+    available.filter((question) => !previousIds.has(questionIdentity(question)))
+  );
+  const fallback = shuffle(
+    available.filter((question) => previousIds.has(questionIdentity(question)))
+  );
 
   return [...fresh, ...fallback]
     .slice(0, TOTAL_QUESTIONS)
