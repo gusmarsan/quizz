@@ -15,7 +15,7 @@ import {
   runTransaction,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
-import { QUESTIONS } from "./questions.js";
+import { DUEL_QUESTIONS } from "./duel-question-bank-v252.js";
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCtZKE8YL2xC0hj0eWWrtGsuYCLEleLjoQ",
@@ -158,7 +158,7 @@ async function createRoom() {
     const name = saveName($("#onlineName")?.value) || "Jogador 1";
     const selected = getCurrentQuestions();
     if (selected.length !== TOTAL_QUESTIONS) {
-      throw new Error("Não há 16 perguntas de múltipla escolha disponíveis agora.");
+      throw new Error("Não há perguntas suficientes para montar a rodada agora.");
     }
 
     disconnectRoom(false);
@@ -167,7 +167,7 @@ async function createRoom() {
 
     await setDoc(reference, {
       gameType: GAME_TYPE,
-      version: 3,
+      version: 4,
       status: "waiting",
       hostUid: user.uid,
       createdAt: serverTimestamp(),
@@ -259,7 +259,11 @@ function connectRoom(code, nextRole) {
       const gameKey = `${roomCode}-${roomData.round || 1}-${roomData.startAt || 0}`;
       if (gameKey !== activeGameKey) {
         activeGameKey = gameKey;
-        startOnlineGame().catch(showError);
+        startOnlineGame().catch((error) => {
+          showError(error);
+          disconnectRoom(false);
+          showScreen("screen-online-menu");
+        });
       }
     }
 
@@ -359,6 +363,7 @@ async function startOnlineGame() {
   $("#opponentBadge")?.classList.remove("hidden");
 
   await runCountdown(roomData.startAt || Date.now());
+  if (!roomData || roomData.status !== "playing") return;
   showScreen("screen-game");
   runGameLoop();
 }
@@ -749,16 +754,29 @@ function stopGameLoop() {
 }
 
 function getCurrentQuestions() {
-  const available = QUESTIONS
-    .filter((question) => question && Array.isArray(question.options) && question.options.length === 4);
+  const available = DUEL_QUESTIONS.filter((question) =>
+    question &&
+    (question.type === "multiple_choice" || question.type === "image_choice" || !question.type) &&
+    Array.isArray(question.options) &&
+    question.options.length === 4 &&
+    Number.isInteger(Number(question.correctIndex)) &&
+    Number(question.correctIndex) >= 0 &&
+    Number(question.correctIndex) < 4
+  );
 
   const recentIds = new Set(recentDuelQuestionIds);
-  const fresh = shuffleQuestions(available.filter((question) => !recentIds.has(questionIdentity(question))));
-  const fallback = shuffleQuestions(available.filter((question) => recentIds.has(questionIdentity(question))));
+  const fresh = shuffleQuestions(
+    available.filter((question) => !recentIds.has(questionIdentity(question)))
+  );
+  const fallback = shuffleQuestions(
+    available.filter((question) => recentIds.has(questionIdentity(question)))
+  );
   const selected = [...fresh, ...fallback].slice(0, TOTAL_QUESTIONS);
 
-  recentDuelQuestionIds = selected.map(questionIdentity);
-  saveRecentDuelQuestionIds(recentDuelQuestionIds);
+  if (selected.length === TOTAL_QUESTIONS) {
+    recentDuelQuestionIds = selected.map(questionIdentity);
+    saveRecentDuelQuestionIds(recentDuelQuestionIds);
+  }
 
   return selected.map((question, index) => ({
     id: String(question.id || `online-${Date.now()}-${index}`),
