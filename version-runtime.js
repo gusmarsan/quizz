@@ -1,4 +1,4 @@
-const APP_VERSION = "0.74";
+const APP_VERSION = "0.7430";
 
 mountVersion();
 
