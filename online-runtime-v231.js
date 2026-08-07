@@ -1,20 +1,16 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import {
-  getAuth,
-  signInAnonymously,
-  setPersistence,
-  browserLocalPersistence
-} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-  deleteDoc,
-  onSnapshot,
-  runTransaction,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+let initializeApp;
+let getAuth;
+let signInAnonymously;
+let setPersistence;
+let browserLocalPersistence;
+let getFirestore;
+let doc;
+let getDoc;
+let setDoc;
+let deleteDoc;
+let onSnapshot;
+let runTransaction;
+let serverTimestamp;
 import { DUEL_QUESTIONS } from "./duel-question-bank-v252.js";
 
 const FIREBASE_CONFIG = {
@@ -58,6 +54,8 @@ let localAnswers = {};
 let transitionPending = false;
 let resultsShown = false;
 let recentDuelQuestionIds = loadRecentDuelQuestionIds();
+let firebaseSdkPromise = null;
+let rematchRuntimePromise = null;
 
 boot();
 
@@ -128,8 +126,54 @@ function captureClick(selector, handler) {
   }, true);
 }
 
+function loadFirebaseSdk() {
+  if (!firebaseSdkPromise) {
+    firebaseSdkPromise = Promise.all([
+      import("https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js"),
+      import("https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js")
+    ]).then(([appModule, authModule, firestoreModule]) => {
+      initializeApp = appModule.initializeApp;
+      getAuth = authModule.getAuth;
+      signInAnonymously = authModule.signInAnonymously;
+      setPersistence = authModule.setPersistence;
+      browserLocalPersistence = authModule.browserLocalPersistence;
+      getFirestore = firestoreModule.getFirestore;
+      doc = firestoreModule.doc;
+      getDoc = firestoreModule.getDoc;
+      setDoc = firestoreModule.setDoc;
+      deleteDoc = firestoreModule.deleteDoc;
+      onSnapshot = firestoreModule.onSnapshot;
+      runTransaction = firestoreModule.runTransaction;
+      serverTimestamp = firestoreModule.serverTimestamp;
+    }).catch((error) => {
+      firebaseSdkPromise = null;
+      throw error;
+    });
+  }
+
+  return firebaseSdkPromise;
+}
+
+function loadRematchRuntime() {
+  if (!rematchRuntimePromise) {
+    rematchRuntimePromise = import("./duel-rematch-v06.js?v=0.8.1").catch((error) => {
+      rematchRuntimePromise = null;
+      console.warn("Não foi possível preparar a revanche agora.", error);
+      return null;
+    });
+  }
+  return rematchRuntimePromise;
+}
+
 async function ensureFirebase() {
-  if (user && db) return;
+  if (user && db) {
+    void loadRematchRuntime();
+    return;
+  }
+
+  await loadFirebaseSdk();
+  void loadRematchRuntime();
 
   if (!firebaseApp) {
     firebaseApp = initializeApp(FIREBASE_CONFIG, "burrquizzz-online-v231");

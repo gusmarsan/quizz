@@ -27,6 +27,11 @@ let generationPromise = null;
 let episodeStarted = false;
 let setupWasActive = setupScreen?.classList.contains("active") || false;
 let recordedPrompts = new Set();
+let cachedPool = null;
+
+window.addEventListener("storage", (event) => {
+  if (event.key === POOL_KEY) cachedPool = null;
+});
 
 boot();
 
@@ -408,10 +413,13 @@ function migrateHistory() {
 }
 
 function getPool() {
-  return dedupeQuestions([
-    ...STATIC_QUESTIONS,
-    ...normalizeQuestions(readArray(POOL_KEY))
-  ]);
+  if (!cachedPool) {
+    cachedPool = dedupeQuestions([
+      ...STATIC_QUESTIONS,
+      ...normalizeQuestions(readArray(POOL_KEY))
+    ]);
+  }
+  return cachedPool;
 }
 
 function mergeIntoPool(items) {
@@ -421,9 +429,8 @@ function mergeIntoPool(items) {
   ]).slice(-MAX_POOL);
 
   localStorage.setItem(POOL_KEY, JSON.stringify(merged));
-  document.documentElement.dataset.questionPoolSize = String(
-    dedupeQuestions([...STATIC_QUESTIONS, ...merged]).length
-  );
+  cachedPool = dedupeQuestions([...STATIC_QUESTIONS, ...merged]);
+  document.documentElement.dataset.questionPoolSize = String(cachedPool.length);
 }
 
 function isPlayableEpisode(episode) {
