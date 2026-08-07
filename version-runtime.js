@@ -1,4 +1,4 @@
-const APP_VERSION = "2.4.0";
+const APP_VERSION = "2.5.0";
 
 mountVersion();
 
@@ -41,7 +41,7 @@ function mountVersion() {
         pointer-events: none;
       }
       @media (max-width: 520px) {
-        .burr-app-version { right: 7px; bottom: 6px; opacity: .76; }
+        .burr-app-version { right: 7px; bottom: 6px; opacity:.76; }
       }
     `;
     document.head.appendChild(style);
