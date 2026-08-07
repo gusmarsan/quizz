@@ -15,16 +15,27 @@ Acervo editorial de 100 perguntas `image_choice`, verificado em 07/08/2026.
 
 ## Imagens
 
-As imagens são reais e são carregadas a partir de arquivos identificados no Wikimedia Commons. Cada pergunta preserva:
+As imagens são reais e foram verificadas a partir de arquivos identificados no Wikimedia Commons. As 100 cópias usadas no jogo foram baixadas e padronizadas em `assets/visual-quiz/`.
+
+Padrão local:
+
+- formato: WebP;
+- lado maior: até 1200 px, sem ampliar imagens menores;
+- compressão adaptativa com alvo de até aproximadamente 220 KB por imagem;
+- nomes estáveis: `v001.webp` a `v100.webp`;
+- manifesto técnico: `assets/visual-quiz/manifest.json`.
+
+Cada pergunta continua preservando:
 
 - `imageFile`: nome exato do arquivo de origem;
-- `image`: URL de redirecionamento para uma versão de até 1200 px;
+- `remoteImage`: URL da imagem externa que originou a cópia local;
+- `image`: arquivo WebP local efetivamente exibido no jogo;
 - `imageSource`: página do arquivo no Wikimedia Commons;
 - `imageLicense`: licença ou indicação de domínio público encontrada na página de origem;
 - `imageCredit`: autoria/crédito editorial;
 - `verifiedAt`: data da curadoria.
 
-A URL de origem fica separada da imagem exibida para que procedência e licença continuem auditáveis.
+O manifesto registra ainda dimensões finais, peso, qualidade de conversão e SHA-256 de cada WebP. Assim, a cópia usada pelo jogo fica estável sem perder a procedência e a licença da imagem original.
 
 ## Regras editoriais
 
