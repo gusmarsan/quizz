@@ -29,7 +29,7 @@ function prepareQuestionImage() {
 
   image.removeAttribute("loading");
   image.decoding = "async";
-  image.alt = "";
+  setImageAlt(image, "");
 
   image.addEventListener("load", () => setImageState("ready"));
   image.addEventListener("error", () => setImageState("error"));
@@ -38,14 +38,14 @@ function prepareQuestionImage() {
     const wrap = document.querySelector("#questionImageWrap");
     const src = image.getAttribute("src") || "";
     if (!src || wrap?.classList.contains("hidden")) {
-      image.alt = "";
+      setImageAlt(image, "");
       setImageState("idle");
       return;
     }
 
     image.removeAttribute("loading");
     image.decoding = "async";
-    image.alt = getCurrentImageAlt();
+    setImageAlt(image, getCurrentImageAlt());
     setImageState(image.complete && image.naturalWidth > 0 ? "ready" : "loading");
   }).observe(image, { attributes: true, attributeFilter: ["src", "alt", "loading"] });
 }
@@ -168,7 +168,8 @@ function setPreload(url) {
     document.head.appendChild(link);
   }
 
-  if (link.href !== new URL(url, document.baseURI).href) link.href = url;
+  const absoluteUrl = new URL(url, document.baseURI).href;
+  if (link.href !== absoluteUrl) link.href = url;
 }
 
 function ensureDuelWatch() {
@@ -215,7 +216,7 @@ function syncQuestionImageAccessibility() {
   if (!image || !wrap || wrap.classList.contains("hidden") || !image.getAttribute("src")) return;
   image.removeAttribute("loading");
   image.decoding = "async";
-  image.alt = getCurrentImageAlt();
+  setImageAlt(image, getCurrentImageAlt());
 }
 
 function getCurrentImageAlt() {
@@ -226,11 +227,17 @@ function getCurrentImageAlt() {
   return explicitAlt || "Imagem necessária para responder à pergunta";
 }
 
+function setImageAlt(image, value) {
+  const next = String(value || "");
+  if (image.alt !== next) image.alt = next;
+}
+
 function setImageState(state) {
   const wrap = document.querySelector("#questionImageWrap");
   if (!wrap) return;
-  wrap.dataset.imageState = state;
-  wrap.setAttribute("aria-busy", state === "loading" ? "true" : "false");
+  if (wrap.dataset.imageState !== state) wrap.dataset.imageState = state;
+  const busy = state === "loading" ? "true" : "false";
+  if (wrap.getAttribute("aria-busy") !== busy) wrap.setAttribute("aria-busy", busy);
 }
 
 function getRoomCode() {
@@ -242,7 +249,7 @@ function getRoomCode() {
 
 function looksLikeQuestionArray(value) {
   return Array.isArray(value) && value.length > 0 && value.every((item) =>
-    item && typeof item === "object" && typeof item.prompt === "string" && Array.isArray(item.options)
+    item && typeof item === "object" && typeof item.prompt === "string" && typeof item.type === "string"
   );
 }
 
