@@ -29,6 +29,7 @@ const FIREBASE_CONFIG = {
 const ROOM_COLLECTION = "battleshipRooms";
 const GAME_TYPE = "burrquizzz";
 const NAME_STORAGE_KEY = "quizDuelPlayerName";
+const RECENT_QUESTIONS_STORAGE_KEY = "quizDuelRecentQuestionIdsV1";
 const QUESTION_MS = 30000;
 const FEEDBACK_MS = 2600;
 const TOTAL_QUESTIONS = 16;
@@ -56,6 +57,7 @@ let locked = false;
 let localAnswers = {};
 let transitionPending = false;
 let resultsShown = false;
+let recentDuelQuestionIds = loadRecentDuelQuestionIds();
 
 boot();
 
@@ -747,22 +749,60 @@ function stopGameLoop() {
 }
 
 function getCurrentQuestions() {
-  return QUESTIONS
-    .filter((question) => question && Array.isArray(question.options) && question.options.length === 4)
-    .slice(0, TOTAL_QUESTIONS)
-    .map((question, index) => ({
-      id: String(question.id || `online-${Date.now()}-${index}`),
-      type: question.type === "image_choice" ? "image_choice" : "multiple_choice",
-      category: String(question.category || "Burrquizzz"),
-      difficulty: String(question.difficulty || "media"),
-      prompt: String(question.prompt || ""),
-      options: question.options.map(String),
-      correctIndex: Number(question.correctIndex),
-      explanation: String(question.explanation || ""),
-      image: String(question.image || ""),
-      imageCredit: String(question.imageCredit || ""),
-      supportText: String(question.supportText || "")
-    }));
+  const available = QUESTIONS
+    .filter((question) => question && Array.isArray(question.options) && question.options.length === 4);
+
+  const recentIds = new Set(recentDuelQuestionIds);
+  const fresh = shuffleQuestions(available.filter((question) => !recentIds.has(questionIdentity(question))));
+  const fallback = shuffleQuestions(available.filter((question) => recentIds.has(questionIdentity(question))));
+  const selected = [...fresh, ...fallback].slice(0, TOTAL_QUESTIONS);
+
+  recentDuelQuestionIds = selected.map(questionIdentity);
+  saveRecentDuelQuestionIds(recentDuelQuestionIds);
+
+  return selected.map((question, index) => ({
+    id: String(question.id || `online-${Date.now()}-${index}`),
+    type: question.type === "image_choice" ? "image_choice" : "multiple_choice",
+    category: String(question.category || "Burrquizzz"),
+    difficulty: String(question.difficulty || "media"),
+    prompt: String(question.prompt || ""),
+    options: question.options.map(String),
+    correctIndex: Number(question.correctIndex),
+    explanation: String(question.explanation || ""),
+    image: String(question.image || ""),
+    imageCredit: String(question.imageCredit || ""),
+    supportText: String(question.supportText || "")
+  }));
+}
+
+function questionIdentity(question) {
+  return String(question?.id || question?.prompt || "");
+}
+
+function shuffleQuestions(items) {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+}
+
+function loadRecentDuelQuestionIds() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(RECENT_QUESTIONS_STORAGE_KEY) || "[]");
+    return Array.isArray(stored) ? stored.map(String).slice(0, TOTAL_QUESTIONS) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentDuelQuestionIds(ids) {
+  try {
+    localStorage.setItem(RECENT_QUESTIONS_STORAGE_KEY, JSON.stringify(ids.slice(0, TOTAL_QUESTIONS)));
+  } catch {
+    // Se o armazenamento local falhar, a sessão atual ainda mantém o histórico em memória.
+  }
 }
 
 async function makeAvailableRoomCode() {
