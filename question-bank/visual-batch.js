@@ -10,6 +10,13 @@ export const VISUAL_QUESTIONS = [
   ...batch076100
 ];
 
+// As páginas, licenças e créditos originais continuam nos metadados da pergunta.
+// A imagem exibida no jogo é a cópia WebP padronizada e versionada no próprio projeto.
+VISUAL_QUESTIONS.forEach((question) => {
+  question.remoteImage = question.image;
+  question.image = `./assets/visual-quiz/${question.id}.webp`;
+});
+
 const ids = new Set(VISUAL_QUESTIONS.map((question) => question.id));
 const prompts = new Set(VISUAL_QUESTIONS.map((question) => question.prompt.trim().toLowerCase()));
 const images = new Set(VISUAL_QUESTIONS.map((question) => question.imageFile));
