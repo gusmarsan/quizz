@@ -1,4 +1,4 @@
-const APP_VERSION = "0.7430";
+const APP_VERSION = "0.7433";
 
 mountVersion();
 
@@ -35,7 +35,7 @@ function mountVersion() {
         background: rgba(7,24,65,.58);
         color: rgba(255,255,255,.76);
         font: 800 .6875rem/1 system-ui, sans-serif;
-        letter-spacing: .05em;
+        letter-spacing:.05em;
         box-shadow:0 4px 12px rgba(0,0,0,.1);
         backdrop-filter:blur(8px);
         pointer-events:none;
