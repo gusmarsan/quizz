@@ -1,0 +1,49 @@
+name: Normalize visual quiz assets
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/normalize-visual-assets.yml"
+      - "scripts/normalize-visual-assets.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install image tooling
+        run: |
+          printf '{"private":true,"type":"module"}\n' > package.json
+          npm install --no-save --package-lock=false sharp@0.33.5
+
+      - name: Download and normalize 100 images
+        run: node scripts/normalize-visual-assets.mjs
+
+      - name: Remove temporary Node files
+        run: rm -rf node_modules package.json package-lock.json
+
+      - name: Commit normalized assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/visual-quiz
+          if git diff --cached --quiet; then
+            echo "No asset changes to commit."
+            exit 0
+          fi
+          git commit -m "Save and standardize 100 visual quiz images"
+          git push
