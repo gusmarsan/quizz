@@ -1,12 +1,14 @@
 const CACHE_PREFIX = "burrquizzz-pwa-";
-const CACHE_NAME = `${CACHE_PREFIX}v0.8.1-1`;
+const CACHE_NAME = `${CACHE_PREFIX}v0.8.1-2`;
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./pwa-runtime.js",
-  "./icons/burrquizzz-icon.svg",
-  "./icons/burrquizzz-maskable.svg"
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/maskable-512.png",
+  "./icons/apple-touch-icon.png"
 ];
 
 self.addEventListener("install", (event) => {
