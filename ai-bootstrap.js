@@ -9,4 +9,4 @@ import "./offline-first-episode-engine.js?v=0.8.1";
 import "./rarity-runtime.js?v=0.7433";
 import "./legendary-exclusive-runtime-v071.js?v=0.7433";
 import "./accessibility-runtime-v073.js?v=0.7433";
-document.documentElement.dataset.appVersion = "0.8.1";
+document.documentElement.dataset.appVersion = "0.9";
