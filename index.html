@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Burrquizzz" />
   <title>Burrquizzz</title>
-  <link rel="manifest" href="manifest.webmanifest?v=0.8.1-pwa2" />
+  <link rel="manifest" href="manifest.webmanifest?v=0.9" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="icon" type="image/svg+xml" href="icons/burrquizzz-icon.svg" />
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="duel-results-v061.css?v=0.7430" />
   <link rel="stylesheet" href="game-responsive-v07.css?v=0.7430" />
   <link rel="stylesheet" href="solo-feedback-v074.css?v=0.7430" />
+  <link rel="stylesheet" href="mobile-viewport-lock-v081.css?v=0.9" />
   <script type="importmap">
   {
     "imports": {
@@ -79,11 +80,12 @@
 
   <dialog id="firebaseDialog"><form method="dialog" class="dialog-card"><button class="dialog-close" value="cancel" aria-label="Fechar">×</button><p class="eyebrow">Duelo online</p><h2>Configurar Firebase</h2><p class="dialog-copy">Cole o objeto <code>firebaseConfig</code> do seu projeto. Ele fica salvo só neste navegador.</p><label class="field"><span>Configuração</span><textarea id="firebaseConfigInput" rows="10" spellcheck="false" placeholder='{"apiKey":"...","authDomain":"...","databaseURL":"...","projectId":"...","appId":"..."}'></textarea></label><p id="firebaseStatus" class="hint"></p><button id="saveFirebaseButton" class="primary-button" value="cancel" type="button">Salvar configuração</button><button id="clearFirebaseButton" class="ghost-button danger" value="cancel" type="button">Apagar configuração</button></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <div id="burrAppVersion" title="Burrquizzz versão 0.8.1" aria-label="Versão 0.8.1">v0.8.1</div>
-  <script type="module" src="ai-bootstrap.js?v=0.8.1"></script>
-  <script type="module" src="online-runtime-v231.js?v=0.8.1"></script>
+  <div id="burrAppVersion" title="Burrquizzz versão 0.9" aria-label="Versão 0.9">v0.9</div>
+  <script type="module" src="ai-bootstrap.js?v=0.9"></script>
+  <script type="module" src="online-runtime-v231.js?v=0.9"></script>
   <script type="module" src="duel-results-v061.js?v=0.7430"></script>
   <script type="module" src="app.js?v=0.7430"></script>
-  <script type="module" src="pwa-runtime.js?v=0.8.1"></script>
+  <script type="module" src="metrics-runtime-v09.js?v=0.9"></script>
+  <script type="module" src="pwa-runtime.js?v=0.9"></script>
 </body>
 </html>
