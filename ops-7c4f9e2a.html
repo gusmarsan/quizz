@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <title>Burrquizzz Ops</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #071841; color: #eef5ff; }
+    main { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 36px 0 72px; }
+    h1 { margin: 0 0 6px; font-size: clamp(2rem, 5vw, 3.6rem); }
+    p { color: #a9bee2; }
+    .card { margin-top: 24px; padding: 22px; border: 1px solid #274b87; border-radius: 18px; background: #0d2858; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    input, button { min-height: 44px; border-radius: 10px; border: 1px solid #41659b; font: inherit; }
+    input { flex: 1 1 280px; padding: 0 12px; color: #fff; background: #071d42; }
+    button { padding: 0 16px; cursor: pointer; font-weight: 750; color: #08204a; background: #ffd33a; }
+    button.secondary { color: #e8f1ff; background: #17376c; }
+    button:disabled { opacity: .5; cursor: wait; }
+    #dashboard[hidden], #error[hidden] { display: none; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+    .stat { padding: 15px; border-radius: 12px; background: #102f66; }
+    .stat small { display: block; color: #9bb2da; }
+    .stat strong { display: block; margin-top: 5px; font-size: 1.35rem; }
+    .table-wrap { overflow: auto; max-height: 62vh; border: 1px solid #274b87; border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; min-width: 880px; font-size: .9rem; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #1e4179; white-space: nowrap; }
+    th { position: sticky; top: 0; background: #12336c; color: #dbe9ff; }
+    td { color: #c8d8f3; }
+    #error { color: #ffb8bf; }
+    @media (max-width: 680px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Burrquizzz Ops</h1>
+    <p>Console privada de métricas da versão 0.9.</p>
+
+    <section id="gate" class="card">
+      <div class="row">
+        <input id="accessKey" type="password" autocomplete="off" placeholder="Chave de acesso" />
+        <button id="unlockButton" type="button">Entrar</button>
+      </div>
+      <p id="error" hidden></p>
+    </section>
+
+    <section id="dashboard" hidden>
+      <div class="row" style="margin-top:24px">
+        <button id="refreshButton" class="secondary" type="button">Atualizar</button>
+        <button id="downloadButton" type="button">Baixar CSV</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><small>Partidas</small><strong id="gamesCount">0</strong></div>
+        <div class="stat"><small>Jogadores</small><strong id="playersCount">0</strong></div>
+        <div class="stat"><small>Tempo total</small><strong id="totalTime">0 min</strong></div>
+        <div class="stat"><small>Média por jogo</small><strong id="averageTime">0 min</strong></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Nome</th><th>Modo</th><th>Status</th><th>Tempo</th><th>Perguntas</th><th>Acertos</th><th>Dispositivo</th><th>Abertura</th></tr></thead>
+          <tbody id="metricsBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyCtZKE8YL2xC0hj0eWWrtGsuYCLEleLjoQ",
+      authDomain: "batalha-naval-gus.firebaseapp.com",
+      projectId: "batalha-naval-gus",
+      storageBucket: "batalha-naval-gus.firebasestorage.app",
+      messagingSenderId: "530937327103",
+      appId: "1:530937327103:web:ab1bd4538f1af6c2b70bca"
+    };
+    const ACCESS_HASH = "7a655aa79bc474a90e1bdb33dab1a853e9f87d5c95b93128c02008dda537f05a";
+    const COLLECTION = "battleshipRooms";
+    const METRIC_TYPE = "burrquizzz-metric-v1";
+    let records = [];
+    let firebase = null;
+
+    const $ = (selector) => document.querySelector(selector);
+    $("#unlockButton").addEventListener("click", unlock);
+    $("#accessKey").addEventListener("keydown", (event) => { if (event.key === "Enter") unlock(); });
+    $("#refreshButton").addEventListener("click", loadMetrics);
+    $("#downloadButton").addEventListener("click", downloadCsv);
+
+    async function sha256(value) {
+      const bytes = new TextEncoder().encode(value);
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function unlock() {
+      const key = $("#accessKey").value.trim();
+      if (await sha256(key) !== ACCESS_HASH) {
+        showError("Chave inválida.");
+        return;
+      }
+      $("#gate").hidden = true;
+      $("#dashboard").hidden = false;
+      await loadMetrics();
+    }
+
+    async function ensureFirebase() {
+      if (firebase) return firebase;
+      const [appModule, authModule, firestoreModule] = await Promise.all([
+        import("https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js"),
+        import("https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js"),
+        import("https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js")
+      ]);
+      const app = appModule.initializeApp(FIREBASE_CONFIG, "burrquizzz-ops-v09");
+      const auth = authModule.getAuth(app);
+      if (!auth.currentUser) await authModule.signInAnonymously(auth);
+      firebase = { db: firestoreModule.getFirestore(app), ...firestoreModule };
+      return firebase;
+    }
+
+    async function loadMetrics() {
+      const refresh = $("#refreshButton");
+      refresh.disabled = true;
+      try {
+        const f = await ensureFirebase();
+        const q = f.query(
+          f.collection(f.db, COLLECTION),
+          f.where("gameType", "==", METRIC_TYPE),
+          f.limit(2000)
+        );
+        const snapshot = await f.getDocs(q);
+        records = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
+          .sort((a, b) => Number(b.startedAtClient || 0) - Number(a.startedAtClient || 0));
+        render();
+      } catch (error) {
+        console.error(error);
+        showError("Não foi possível ler as métricas. Confira as permissões do Firestore.");
+      } finally {
+        refresh.disabled = false;
+      }
+    }
+
+    function render() {
+      const totalSeconds = records.reduce((sum, item) => sum + Number(item.durationSeconds || 0), 0);
+      const players = new Set(records.map((item) => `${item.installId || ""}:${item.playerName || "Jogador"}`));
+      $("#gamesCount").textContent = String(records.length);
+      $("#playersCount").textContent = String(players.size);
+      $("#totalTime").textContent = formatDuration(totalSeconds);
+      $("#averageTime").textContent = formatDuration(records.length ? Math.round(totalSeconds / records.length) : 0);
+      $("#metricsBody").innerHTML = records.map((item) => `
+        <tr>
+          <td>${escapeHtml(formatDate(item.startedAtClient))}</td>
+          <td>${escapeHtml(item.playerName || "Jogador")}</td>
+          <td>${escapeHtml(item.mode || "-")}</td>
+          <td>${escapeHtml(statusLabel(item.status))}</td>
+          <td>${escapeHtml(formatDuration(item.durationSeconds || 0))}</td>
+          <td>${Number(item.lastQuestion || 0)}/${Number(item.questionsTotal || 0)}</td>
+          <td>${Number(item.score || 0)}</td>
+          <td>${escapeHtml(item.device || "-")}</td>
+          <td>${escapeHtml(item.launchMode || "-")}</td>
+        </tr>`).join("");
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(Number(value)));
+    }
+
+    function formatDuration(seconds) {
+      const total = Math.max(0, Number(seconds) || 0);
+      if (total < 60) return `${Math.round(total)} s`;
+      const minutes = Math.floor(total / 60);
+      const rest = Math.round(total % 60);
+      return rest ? `${minutes} min ${rest} s` : `${minutes} min`;
+    }
+
+    function statusLabel(value) {
+      if (value === "completed") return "Concluído";
+      if (value === "left_game") return "Saiu antes";
+      return "Em andamento";
+    }
+
+    function csvCell(value) {
+      const text = String(value ?? "").replaceAll('"', '""');
+      return `"${text}"`;
+    }
+
+    function downloadCsv() {
+      const header = ["data","apelido","modo","status","duracao_segundos","perguntas_total","ultima_pergunta","acertos","dispositivo","abertura","install_id","game_id"];
+      const lines = [header.map(csvCell).join(";")];
+      records.forEach((item) => {
+        lines.push([
+          formatDate(item.startedAtClient), item.playerName, item.mode, statusLabel(item.status),
+          item.durationSeconds || 0, item.questionsTotal || 0, item.lastQuestion || 0, item.score || 0,
+          item.device, item.launchMode, item.installId, item.gameId
+        ].map(csvCell).join(";"));
+      });
+      const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `burrquizzz-metricas-${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function showError(message) {
+      const node = $("#error");
+      node.textContent = message;
+      node.hidden = false;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>
