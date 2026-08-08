@@ -1,0 +1,27 @@
+{
+  "id": "./",
+  "name": "Burrquizzz",
+  "short_name": "Burrquizzz",
+  "description": "Game show de curiosidades, cultura pop, nostalgia e humor.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#071841",
+  "theme_color": "#113d96",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "icons/burrquizzz-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/burrquizzz-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
