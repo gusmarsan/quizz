@@ -14,6 +14,11 @@ brandStyles.rel = "stylesheet";
 brandStyles.href = `./brand-v11.css?v=${BURRQUIZZZ_VERSION}`;
 document.head.appendChild(brandStyles);
 
+const pullRefreshStyles = document.createElement("link");
+pullRefreshStyles.rel = "stylesheet";
+pullRefreshStyles.href = `./pull-refresh-v113.css?v=${BURRQUIZZZ_VERSION}`;
+document.head.appendChild(pullRefreshStyles);
+
 const refreshReleaseMetadata = () => {
   const manifestLink = document.querySelector('link[rel="manifest"]');
   if (manifestLink) manifestLink.href = `./manifest.webmanifest?v=${BURRQUIZZZ_VERSION}`;
