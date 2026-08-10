@@ -1,9 +1,9 @@
 const CACHE_PREFIX = "burrquizzz-pwa-";
-const CACHE_NAME = `${CACHE_PREFIX}v1.12-1`;
+const CACHE_NAME = `${CACHE_PREFIX}v1.13-1`;
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./manifest.webmanifest?v=1.12",
+  "./manifest.webmanifest?v=1.13",
   "./pwa-runtime.js?v=1.0",
   "./brand-v11.css?v=1.1",
   "./styles.css?v=1.0",
@@ -16,6 +16,7 @@ const APP_SHELL = [
   "./setup-screens-approved.css?v=1.0",
   "./production-v1.css?v=1.0",
   "./button-typography-v112.css?v=1.12",
+  "./pull-refresh-v113.css?v=1.13",
   "./app.js?v=1.0",
   "./online-runtime-v231.js?v=1.0",
   "./duel-results-v061.js?v=1.0",
@@ -54,6 +55,10 @@ self.addEventListener("activate", (event) => {
       ))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {
