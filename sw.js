@@ -1,17 +1,18 @@
 const CACHE_PREFIX = "burrquizzz-pwa-";
-const CACHE_NAME = `${CACHE_PREFIX}v1.13-1`;
+const CACHE_NAME = `${CACHE_PREFIX}v1.13-2`;
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./manifest.webmanifest?v=1.12",
   "./manifest.webmanifest?v=1.13",
   "./pwa-runtime.js?v=1.0",
-  "./brand-v11.css?v=1.1",
+  "./brand-v11.css?v=1.13",
   "./styles.css?v=1.0",
   "./visual-polish.css?v=1.0",
   "./duel-results-v061.css?v=1.0",
   "./game-responsive-v07.css?v=1.0",
   "./solo-feedback-v074.css?v=1.0",
-  "./mobile-viewport-lock-v081.css?v=1.1",
+  "./mobile-viewport-lock-v081.css?v=1.13",
   "./home-preview-2.css?v=1.0",
   "./setup-screens-approved.css?v=1.0",
   "./production-v1.css?v=1.0",
@@ -30,11 +31,11 @@ const APP_SHELL = [
   "./assets/resultado/resultado-background.png",
   "./assets/resultado/resultado-laurels.png",
   "./assets/resultado/resultado-marquee-frame.png",
-  "./icons/icon-192.png?v=1.1",
-  "./icons/icon-512.png?v=1.1",
-  "./icons/maskable-512.png?v=1.1",
-  "./icons/apple-touch-icon.png?v=1.1",
-  "./icons/burrquizzz-icon.svg?v=1.1"
+  "./icons/icon-192.png?v=1.13",
+  "./icons/icon-512.png?v=1.13",
+  "./icons/maskable-512.png?v=1.13",
+  "./icons/apple-touch-icon.png?v=1.13",
+  "./icons/burrquizzz-icon.svg?v=1.13"
 ];
 
 self.addEventListener("install", (event) => {
