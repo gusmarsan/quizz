@@ -43,6 +43,8 @@ const screens = $$(".screen");
 const elements = {
   homeButton: $("#homeButton"),
   firebaseButton: $("#firebaseButton"),
+  homeUserInitial: $("#homeUserInitial"),
+  homeUserName: $("#homeUserName"),
   soloModeButton: $("#soloModeButton"),
   onlineModeButton: $("#onlineModeButton"),
   startSoloButton: $("#startSoloButton"),
@@ -98,7 +100,15 @@ const elements = {
 
 function showScreen(id) {
   screens.forEach((screen) => screen.classList.toggle("active", screen.id === id));
+  if (id === "screen-home") refreshHomeIdentity();
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function refreshHomeIdentity() {
+  const savedName = getSavedName();
+  const displayName = savedName || "jogador";
+  if (elements.homeUserName) elements.homeUserName.textContent = displayName;
+  if (elements.homeUserInitial) elements.homeUserInitial.textContent = displayName.charAt(0).toLocaleUpperCase("pt-BR");
 }
 
 function toast(message) {
@@ -936,7 +946,7 @@ function showOnlineResults() {
   elements.resultSubtitle.textContent = tied ? "Mesmo número de acertos e o mesmo tempo total." : "Mais acertos vencem. O menor tempo decide em caso de empate.";
   elements.soloStats.classList.add("hidden");
   elements.duelScoreboard.classList.remove("hidden");
-  elements.playAgainButton.textContent = state.isHost ? "Nova partida na sala" : "Voltar à sala";
+  elements.playAgainButton.textContent = "Pedir revanche";
   renderScoreRow(elements.scorePlayerOne, results[0], true);
   renderScoreRow(elements.scorePlayerTwo, results[1], false);
   showScreen("screen-results");

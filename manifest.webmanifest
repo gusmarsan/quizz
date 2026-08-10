@@ -7,8 +7,8 @@
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#071841",
-  "theme_color": "#113d96",
+  "background_color": "#08151d",
+  "theme_color": "#08151d",
   "categories": ["games", "entertainment"],
   "icons": [
     {

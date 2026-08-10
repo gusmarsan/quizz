@@ -731,7 +731,7 @@ function showOnlineResults() {
   $("#resultSubtitle").textContent = "Mais acertos vencem. O menor tempo decide em caso de empate.";
   $("#soloStats").classList.add("hidden");
   $("#duelScoreboard").classList.remove("hidden");
-  $("#playAgainButton").textContent = role === "host" ? "Criar nova sala" : "Jogar novamente";
+  $("#playAgainButton").textContent = "Pedir revanche";
 
   renderScoreRow($("#scorePlayerOne"), results[0], true);
   renderScoreRow($("#scorePlayerTwo"), results[1], false);
