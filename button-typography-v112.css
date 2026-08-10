@@ -1,0 +1,34 @@
+:root {
+  --burr-button-font: "DM Sans", "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+/* v1.12 — one interface typeface for every interactive button.
+   The Burrquizzz brand button is intentionally excluded because it uses
+   the display/brand typography rather than the action-button typography. */
+button:not(.brand) {
+  font-family: var(--burr-button-font);
+  font-weight: 800;
+}
+
+button:not(.brand) * {
+  font-family: inherit;
+}
+
+/* Segmented choices behave visually like buttons, so keep them aligned too. */
+.segmented span {
+  font-family: var(--burr-button-font);
+  font-weight: 800;
+}
+
+/* Keep the two-line Home CTAs exactly on the reference hierarchy. */
+.real-home__cta strong,
+.real-home__online strong {
+  font-family: var(--burr-button-font);
+  font-weight: 800;
+}
+
+.real-home__cta small,
+.real-home__online small {
+  font-family: var(--burr-button-font);
+  font-weight: 500;
+}
