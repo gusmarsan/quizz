@@ -1,0 +1,75 @@
+/* Burrquizzz v1.13 — pull to refresh */
+
+#burrPullRefresh {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  left: 50%;
+  z-index: 15900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 999px;
+  background: rgba(7, 24, 65, .92);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .22);
+  font: 800 .75rem/1 "DM Sans", "Trebuchet MS", "Segoe UI", sans-serif;
+  letter-spacing: .02em;
+  opacity: 0;
+  pointer-events: none;
+  translate: -50% -54px;
+  transition: opacity .16s ease, translate .2s ease;
+  backdrop-filter: blur(10px);
+}
+
+#burrPullRefresh.is-visible {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+#burrPullRefresh .pull-refresh__icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  font-size: 1rem;
+  line-height: 1;
+  transform-origin: center;
+  transition: transform .16s ease;
+}
+
+#burrPullRefresh.is-ready .pull-refresh__icon {
+  transform: rotate(180deg);
+}
+
+#burrPullRefresh.is-refreshing .pull-refresh__icon {
+  animation: burr-refresh-spin .75s linear infinite;
+}
+
+.screen.pull-refresh-target {
+  translate: 0 var(--pull-refresh-distance, 0px);
+  transition: translate .2s cubic-bezier(.2, .8, .2, 1);
+  will-change: translate;
+}
+
+body.pull-refresh-dragging .screen.pull-refresh-target {
+  transition: none;
+}
+
+@keyframes burr-refresh-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #burrPullRefresh,
+  #burrPullRefresh .pull-refresh__icon,
+  .screen.pull-refresh-target {
+    transition: none;
+  }
+
+  #burrPullRefresh.is-refreshing .pull-refresh__icon {
+    animation-duration: 1.4s;
+  }
+}
