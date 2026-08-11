@@ -128,6 +128,16 @@ body:has(#screen-lobby.active) .brand-mark {
   text-wrap: balance;
 }
 
+@media (min-width: 681px) {
+  #screen-lobby h2 {
+    max-width: none;
+    margin-bottom: 22px;
+    font-size: clamp(2.55rem,4.1vw,3.15rem);
+    line-height: .94;
+    white-space: nowrap;
+  }
+}
+
 #screen-lobby .room-code-card {
   display: grid;
   width: 100%;
