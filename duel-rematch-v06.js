@@ -7,11 +7,18 @@ import {
   runTransaction
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 import { DUEL_QUESTIONS } from "./duel-question-bank-v252.js";
+import {
+  buildDuelQuestionRound,
+  calculateDuelOutcome,
+  duelModeForCount,
+  getConfiguredDuelQuestionCount,
+  getDuelResultAction
+} from "./duel-round-rules-v17.js?v=1.7";
 
 const FIREBASE_APP_NAME = "burrquizzz-online-v231";
 const ROOM_COLLECTION = "battleshipRooms";
 const GAME_TYPE = "burrquizzz";
-const TOTAL_QUESTIONS = 16;
+const QUESTION_MS = 30000;
 const REMATCH_COUNTDOWN_MS = 4200;
 
 let watchedCode = "";
@@ -39,6 +46,7 @@ function interceptRematchClick(event) {
   const resultsScreen = document.querySelector("#screen-results");
   const code = getRoomCode();
   if (!code || !resultsScreen?.classList.contains("active")) return;
+  if (button.dataset.duelAction === "new-duel") return;
 
   event.preventDefault();
   event.stopImmediatePropagation();
@@ -85,29 +93,35 @@ function renderRematchState(data, uid) {
   if (data.status !== "finished") {
     button.disabled = true;
     button.textContent = "Preparando revanche...";
+    button.dataset.duelAction = "preparing-rematch";
     return;
   }
 
-  const playerUids = [data.player1?.uid, data.player2?.uid].filter(Boolean);
-  if (!playerUids.includes(uid)) return;
-
+  const outcome = calculateDuelOutcome(data, QUESTION_MS);
+  if (!outcome || !outcome.results.some((result) => result.uid === uid)) return;
   const requests = data.rematchRequests || {};
-  const mine = requests[uid] === true;
-  const opponentUid = playerUids.find((playerUid) => playerUid !== uid);
-  const opponentRequested = Boolean(opponentUid && requests[opponentUid] === true);
+  const action = getDuelResultAction(outcome, requests, uid);
 
-  if (mine && opponentRequested) {
-    button.disabled = true;
-    button.textContent = "Preparando revanche...";
-  } else if (mine) {
+  if (action === "new-duel") {
+    button.disabled = false;
+    button.textContent = "Jogar novamente";
+    button.dataset.duelAction = "new-duel";
+  } else if (action === "waiting-rematch") {
     button.disabled = true;
     button.textContent = "Aguardando adversário";
-  } else if (opponentRequested) {
-    button.disabled = false;
-    button.textContent = "Aceitar revanche";
-  } else {
+    button.dataset.duelAction = "waiting-rematch";
+  } else if (action === "request-rematch") {
     button.disabled = false;
     button.textContent = "Pedir revanche";
+    button.dataset.duelAction = "request-rematch";
+  } else if (action === "accept-rematch") {
+    button.disabled = false;
+    button.textContent = "Aceitar revanche";
+    button.dataset.duelAction = "accept-rematch";
+  } else {
+    button.disabled = false;
+    button.textContent = "Jogar novamente";
+    button.dataset.duelAction = "new-duel";
   }
 }
 
@@ -139,24 +153,33 @@ async function requestRematch() {
       const data = snapshot.data();
       if (data.gameType !== GAME_TYPE || data.status !== "finished") return;
 
-      const playerUids = [data.player1?.uid, data.player2?.uid].filter(Boolean);
-      if (!playerUids.includes(context.user.uid) || playerUids.length !== 2) {
+      const outcome = calculateDuelOutcome(data, QUESTION_MS);
+      if (!outcome || !outcome.results.some((result) => result.uid === context.user.uid)) {
         throw new Error("Esta revanche não está disponível.");
       }
 
-      const requests = {
-        ...(data.rematchRequests || {}),
-        [context.user.uid]: true
-      };
-      const bothAccepted = playerUids.every((uid) => requests[uid] === true);
+      if (outcome.tied) return;
+      const requests = data.rematchRequests || {};
+      const loserRequested = requests[outcome.loserUid] === true;
 
-      if (!bothAccepted) {
-        transaction.update(reference, { rematchRequests: requests });
+      if (context.user.uid === outcome.loserUid && !loserRequested) {
+        transaction.update(reference, {
+          rematchRequests: { [outcome.loserUid]: true }
+        });
         return;
       }
 
-      const nextQuestions = buildQuestionRound(data.questions || []);
-      if (nextQuestions.length !== TOTAL_QUESTIONS) {
+      if (context.user.uid !== outcome.winnerUid || !loserRequested) return;
+
+      const questionCount = getConfiguredDuelQuestionCount(data);
+      const nextQuestions = buildDuelQuestionRound(
+        DUEL_QUESTIONS,
+        questionCount,
+        data.questions || [],
+        Math.random,
+        "rematch"
+      );
+      if (nextQuestions.length !== questionCount) {
         throw new Error("Não há perguntas suficientes para iniciar a revanche.");
       }
 
@@ -170,6 +193,9 @@ async function requestRematch() {
         questionStartedAt: startAt,
         feedbackStartedAt: null,
         finishedAt: null,
+        questionCount,
+        duelMode: duelModeForCount(questionCount),
+        roundConfigured: true,
         questions: nextQuestions,
         answers: {},
         rematchRequests: {}
@@ -179,49 +205,6 @@ async function requestRematch() {
     requesting = false;
     watchCurrentRoom();
   }
-}
-
-function buildQuestionRound(previousQuestions) {
-  const previousIds = new Set(previousQuestions.map(questionIdentity));
-  const available = DUEL_QUESTIONS.filter(
-    (question) => question && Array.isArray(question.options) && question.options.length === 4
-  );
-
-  const fresh = shuffle(
-    available.filter((question) => !previousIds.has(questionIdentity(question)))
-  );
-  const fallback = shuffle(
-    available.filter((question) => previousIds.has(questionIdentity(question)))
-  );
-
-  return [...fresh, ...fallback]
-    .slice(0, TOTAL_QUESTIONS)
-    .map((question, index) => ({
-      id: String(question.id || `rematch-${Date.now()}-${index}`),
-      type: question.type === "image_choice" ? "image_choice" : "multiple_choice",
-      category: String(question.category || "Burrquizzz"),
-      difficulty: String(question.difficulty || "media"),
-      prompt: String(question.prompt || ""),
-      options: question.options.map(String),
-      correctIndex: Number(question.correctIndex),
-      explanation: String(question.explanation || ""),
-      image: String(question.image || ""),
-      imageCredit: String(question.imageCredit || ""),
-      supportText: String(question.supportText || "")
-    }));
-}
-
-function questionIdentity(question) {
-  return String(question?.id || question?.prompt || "");
-}
-
-function shuffle(items) {
-  const shuffled = [...items];
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
-  }
-  return shuffled;
 }
 
 function getRoomCode() {

@@ -12,6 +12,18 @@ let onSnapshot;
 let runTransaction;
 let serverTimestamp;
 import { DUEL_QUESTIONS } from "./duel-question-bank-v252.js";
+import {
+  MAX_DUEL_QUESTIONS,
+  buildDuelQuestionRound,
+  canStartDuelRoom,
+  calculateDuelOutcome,
+  duelModeForCount,
+  duelQuestionIdentity,
+  getConfiguredDuelQuestionCount,
+  getDuelResultAction,
+  isDuelRoundConfigured,
+  isValidDuelQuestionCount
+} from "./duel-round-rules-v17.js?v=1.7";
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCtZKE8YL2xC0hj0eWWrtGsuYCLEleLjoQ",
@@ -28,7 +40,6 @@ const NAME_STORAGE_KEY = "quizDuelPlayerName";
 const RECENT_QUESTIONS_STORAGE_KEY = "quizDuelRecentQuestionIdsV1";
 const QUESTION_MS = 30000;
 const FEEDBACK_MS = 2600;
-const TOTAL_QUESTIONS = 16;
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
@@ -86,19 +97,28 @@ function interceptOnlineFlow() {
   captureClick("#createRoomButton", createRoom);
   captureClick("#joinRoomButton", joinRoom);
   captureClick("#copyRoomCodeButton", shareRoom);
+  captureClick("#shareRoundRoomButton", shareRoom);
   captureClick("#leaveRoomButton", () => leaveRoom(true));
+  captureClick("#leaveRoundSetupButton", () => leaveRoom(true));
   captureClick("#startDuelButton", () => {});
+  $$(".duel-round-option").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      configureRound(Number(button.dataset.questionCount)).catch(showError);
+    }, true);
+  });
 
   $("#duelCountField")?.classList.add("hidden");
   $("#startDuelButton")?.classList.add("hidden");
 
   $("#playAgainButton")?.addEventListener("click", (event) => {
-    if (!roomCode) return;
+    if (!roomCode || event.currentTarget?.dataset.duelAction !== "new-duel") return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    if (role === "host") createRoom();
+    if (role === "host") startNewDuel().catch(showError);
     else {
-      disconnectRoom(false);
+      disconnectRoom(true);
       showScreen("screen-online-menu");
     }
   }, true);
@@ -157,7 +177,7 @@ function loadFirebaseSdk() {
 
 function loadRematchRuntime() {
   if (!rematchRuntimePromise) {
-    rematchRuntimePromise = import("./duel-rematch-v06.js?v=0.8.1").catch((error) => {
+    rematchRuntimePromise = import("./duel-rematch-v06.js?v=1.7").catch((error) => {
       rematchRuntimePromise = null;
       console.warn("Não foi possível preparar a revanche agora.", error);
       return null;
@@ -200,18 +220,13 @@ async function createRoom() {
   try {
     await ensureFirebase();
     const name = saveName($("#onlineName")?.value) || "Jogador 1";
-    const selected = getCurrentQuestions();
-    if (selected.length !== TOTAL_QUESTIONS) {
-      throw new Error("Não há perguntas suficientes para montar a rodada agora.");
-    }
-
     disconnectRoom(false);
     const code = await makeAvailableRoomCode();
     const reference = doc(db, ROOM_COLLECTION, code);
 
     await setDoc(reference, {
       gameType: GAME_TYPE,
-      version: 4,
+      version: 5,
       status: "waiting",
       hostUid: user.uid,
       createdAt: serverTimestamp(),
@@ -223,8 +238,12 @@ async function createRoom() {
       feedbackStartedAt: null,
       player1: { uid: user.uid, name },
       player2: null,
-      questions: selected,
-      answers: {}
+      duelMode: null,
+      questionCount: null,
+      roundConfigured: false,
+      questions: [],
+      answers: {},
+      rematchRequests: {}
     });
 
     connectRoom(code, "host");
@@ -280,7 +299,8 @@ function connectRoom(code, nextRole) {
   role = nextRole;
   roomReference = doc(db, ROOM_COLLECTION, code);
   history.replaceState(null, "", roomInviteUrl(code));
-  renderLobby();
+  if (role === "host") renderRoundSetup();
+  else renderLobby();
 
   roomUnsubscribe = onSnapshot(roomReference, (snapshot) => {
     if (!snapshot.exists()) {
@@ -293,9 +313,17 @@ function connectRoom(code, nextRole) {
     roomData = snapshot.data();
     transitionPending = false;
 
-    if (roomData.status === "waiting") renderLobby();
+    const roundConfigured = isDuelRoundConfigured(roomData);
+    if (roomData.status === "waiting") {
+      if (role === "host" && !roundConfigured) renderRoundSetup();
+      else renderLobby();
+    }
 
-    if (role === "host" && roomData.status === "waiting" && roomData.player2 && !startingRoom) {
+    if (
+      role === "host" &&
+      canStartDuelRoom(roomData) &&
+      !startingRoom
+    ) {
       startRoom();
     }
 
@@ -325,7 +353,7 @@ async function startRoom() {
       const snapshot = await transaction.get(roomReference);
       if (!snapshot.exists()) return;
       const data = snapshot.data();
-      if (data.status !== "waiting" || !data.player2) return;
+      if (!canStartDuelRoom(data)) return;
 
       transaction.update(roomReference, {
         status: "playing",
@@ -338,6 +366,61 @@ async function startRoom() {
     });
   } finally {
     startingRoom = false;
+  }
+}
+
+function renderRoundSetup() {
+  if (!roomCode || role !== "host") return;
+  showScreen("screen-duel-round-setup");
+  const code = $("#duelRoundRoomCode");
+  if (code) code.textContent = roomCode;
+}
+
+async function configureRound(questionCount) {
+  if (
+    role !== "host" ||
+    !roomReference ||
+    !user ||
+    !isValidDuelQuestionCount(questionCount)
+  ) {
+    throw new Error("Escolha um formato de duelo válido.");
+  }
+
+  const buttons = $$(".duel-round-option");
+  buttons.forEach((button) => { button.disabled = true; });
+  const selected = getCurrentQuestions(questionCount);
+
+  try {
+    if (selected.length !== questionCount) {
+      throw new Error("Não há perguntas suficientes para montar a rodada agora.");
+    }
+
+    let configured = false;
+    await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(roomReference);
+      if (!snapshot.exists()) throw new Error("A sala foi encerrada.");
+
+      const data = snapshot.data();
+      if (data.gameType !== GAME_TYPE || data.hostUid !== user.uid) {
+        throw new Error("Somente o jogador 1 pode montar a rodada.");
+      }
+      if (data.status !== "waiting") throw new Error("Esta partida já começou.");
+      if (isDuelRoundConfigured(data)) return;
+
+      transaction.update(roomReference, {
+        duelMode: duelModeForCount(questionCount),
+        questionCount,
+        roundConfigured: true,
+        questions: selected,
+        answers: {},
+        rematchRequests: {}
+      });
+      configured = true;
+    });
+
+    if (configured) rememberDuelQuestions(selected);
+  } finally {
+    buttons.forEach((button) => { button.disabled = false; });
   }
 }
 
@@ -365,9 +448,14 @@ function renderLobby() {
 
   const hint = $("#lobbyHint");
   if (hint) {
-    hint.textContent = roomData?.player2
-      ? "A outra pessoa entrou. O duelo começa automaticamente."
-      : "Compartilhe o convite. O jogo começa assim que a outra pessoa entrar.";
+    const configured = isDuelRoundConfigured(roomData);
+    if (role === "guest" && !configured) {
+      hint.textContent = "Aguardando o jogador 1 montar a rodada.";
+    } else {
+      hint.textContent = roomData?.player2
+        ? "A outra pessoa entrou. O duelo começa automaticamente."
+        : "Compartilhe o convite. O jogo começa assim que a outra pessoa entrar.";
+    }
   }
 }
 
@@ -396,7 +484,8 @@ async function shareRoom() {
 async function startOnlineGame() {
   stopGameLoop();
   questions = Array.isArray(roomData?.questions) ? roomData.questions : [];
-  if (questions.length !== TOTAL_QUESTIONS) {
+  const questionCount = getConfiguredDuelQuestionCount(roomData);
+  if (!questionCount || questions.length !== questionCount) {
     throw new Error("A sala não contém uma rodada válida.");
   }
 
@@ -721,11 +810,16 @@ function showOnlineResults() {
   resultsShown = true;
   stopGameLoop();
 
-  const players = [roomData.player1, roomData.player2].filter(Boolean);
-  const results = players.map(playerResult);
-  results.sort((a, b) => b.correct - a.correct || a.time - b.time);
+  questions = Array.isArray(roomData.questions) ? roomData.questions : questions;
+  const outcome = calculateDuelOutcome(roomData, QUESTION_MS);
+  if (!outcome) {
+    showError(new Error("O resultado desta sala está incompleto."));
+    return;
+  }
+  const { results, tied } = outcome;
   const winner = results[0];
-  const tied = results.length === 2 && results[0].correct === results[1].correct && results[0].time === results[1].time;
+  const initialAction = getDuelResultAction(outcome, roomData.rematchRequests || {}, user.uid);
+  const button = $("#playAgainButton");
 
   $("#resultEyebrow").textContent = "Resultado do duelo";
   $("#resultTitle").textContent = tied
@@ -736,31 +830,35 @@ function showOnlineResults() {
   $("#resultSubtitle").textContent = "Mais acertos vencem. O menor tempo decide em caso de empate.";
   $("#soloStats").classList.add("hidden");
   $("#duelScoreboard").classList.remove("hidden");
-  $("#playAgainButton").textContent = "Pedir revanche";
+  if (button) {
+    button.disabled = false;
+    button.textContent = initialAction === "request-rematch" ? "Pedir revanche" : "Jogar novamente";
+    button.dataset.duelAction = initialAction || "new-duel";
+  }
 
-  renderScoreRow($("#scorePlayerOne"), results[0], true);
+  renderScoreRow($("#scorePlayerOne"), results[0], !tied);
   renderScoreRow($("#scorePlayerTwo"), results[1], false);
   showScreen("screen-results");
-}
-
-function playerResult(player) {
-  const answers = roomData?.answers?.[player.uid] || {};
-  const entries = Object.values(answers);
-  const correct = entries.filter((answer) => answer?.correct).length;
-  const answeredTime = entries.reduce((sum, answer) => sum + Number(answer?.elapsedMs || QUESTION_MS), 0);
-  const missing = Math.max(0, questions.length - entries.length);
-  return {
-    uid: player.uid,
-    name: player.name || "Jogador",
-    correct,
-    time: answeredTime + missing * QUESTION_MS
-  };
 }
 
 function renderScoreRow(element, result, winner) {
   if (!element || !result) return;
   element.className = `score-row${winner ? " winner" : ""}`;
   element.innerHTML = `<strong>${escapeHtml(result.name)}${result.uid === user.uid ? " (você)" : ""}</strong><span>${result.correct}/${questions.length} acertos</span><span>${(result.time / 1000).toFixed(1).replace(".", ",")}s</span>`;
+}
+
+async function startNewDuel() {
+  const previousRoom = roomReference;
+  const wasHost = role === "host";
+  disconnectRoom(true);
+
+  if (wasHost && previousRoom) {
+    try { await deleteDoc(previousRoom); } catch { /* A sala encerrada pode já ter expirado. */ }
+    await createRoom();
+    return;
+  }
+
+  showScreen("screen-online-menu");
 }
 
 async function leaveRoom(removeRoom) {
@@ -802,63 +900,25 @@ function stopGameLoop() {
   loop = null;
 }
 
-function getCurrentQuestions() {
-  const available = DUEL_QUESTIONS.filter((question) =>
-    question &&
-    (question.type === "multiple_choice" || question.type === "image_choice" || !question.type) &&
-    Array.isArray(question.options) &&
-    question.options.length === 4 &&
-    Number.isInteger(Number(question.correctIndex)) &&
-    Number(question.correctIndex) >= 0 &&
-    Number(question.correctIndex) < 4
+function getCurrentQuestions(questionCount) {
+  return buildDuelQuestionRound(
+    DUEL_QUESTIONS,
+    questionCount,
+    recentDuelQuestionIds,
+    Math.random,
+    "online"
   );
-
-  const recentIds = new Set(recentDuelQuestionIds);
-  const fresh = shuffleQuestions(
-    available.filter((question) => !recentIds.has(questionIdentity(question)))
-  );
-  const fallback = shuffleQuestions(
-    available.filter((question) => recentIds.has(questionIdentity(question)))
-  );
-  const selected = [...fresh, ...fallback].slice(0, TOTAL_QUESTIONS);
-
-  if (selected.length === TOTAL_QUESTIONS) {
-    recentDuelQuestionIds = selected.map(questionIdentity);
-    saveRecentDuelQuestionIds(recentDuelQuestionIds);
-  }
-
-  return selected.map((question, index) => ({
-    id: String(question.id || `online-${Date.now()}-${index}`),
-    type: question.type === "image_choice" ? "image_choice" : "multiple_choice",
-    category: String(question.category || "Burrquizzz"),
-    difficulty: String(question.difficulty || "media"),
-    prompt: String(question.prompt || ""),
-    options: question.options.map(String),
-    correctIndex: Number(question.correctIndex),
-    explanation: String(question.explanation || ""),
-    image: String(question.image || ""),
-    imageCredit: String(question.imageCredit || ""),
-    supportText: String(question.supportText || "")
-  }));
 }
 
-function questionIdentity(question) {
-  return String(question?.id || question?.prompt || "");
-}
-
-function shuffleQuestions(items) {
-  const shuffled = [...items];
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
-  }
-  return shuffled;
+function rememberDuelQuestions(selected) {
+  recentDuelQuestionIds = selected.map(duelQuestionIdentity).slice(0, MAX_DUEL_QUESTIONS);
+  saveRecentDuelQuestionIds(recentDuelQuestionIds);
 }
 
 function loadRecentDuelQuestionIds() {
   try {
     const stored = JSON.parse(localStorage.getItem(RECENT_QUESTIONS_STORAGE_KEY) || "[]");
-    return Array.isArray(stored) ? stored.map(String).slice(0, TOTAL_QUESTIONS) : [];
+    return Array.isArray(stored) ? stored.map(String).slice(0, MAX_DUEL_QUESTIONS) : [];
   } catch {
     return [];
   }
@@ -866,7 +926,7 @@ function loadRecentDuelQuestionIds() {
 
 function saveRecentDuelQuestionIds(ids) {
   try {
-    localStorage.setItem(RECENT_QUESTIONS_STORAGE_KEY, JSON.stringify(ids.slice(0, TOTAL_QUESTIONS)));
+    localStorage.setItem(RECENT_QUESTIONS_STORAGE_KEY, JSON.stringify(ids.slice(0, MAX_DUEL_QUESTIONS)));
   } catch {
     // Se o armazenamento local falhar, a sessão atual ainda mantém o histórico em memória.
   }
