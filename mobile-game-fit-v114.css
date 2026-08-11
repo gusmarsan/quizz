@@ -53,8 +53,13 @@
 
   #screen-game.active .category-chip,
   #screen-game.active .type-chip {
-    padding: 6px 8px;
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 8px 5px;
     font-size: .63rem;
+    line-height: 1;
   }
 
   #screen-game.active .question-card h2 {
