@@ -3,14 +3,9 @@
    available, it updates the Service Worker and reloads before the Home appears.
    Offline use always falls back to the installed bundle. */
 (() => {
-  const script = document.currentScript;
-  const bundledVersion = (() => {
-    try {
-      return new URL(script?.src || "", window.location.href).searchParams.get("v") || "current";
-    } catch {
-      return "current";
-    }
-  })();
+  // A versão canônica não depende mais da query string do index. Isso permite
+  // publicar hotfixes como 1.81 sem deixar um HTML antigo preso em loop de update.
+  const bundledVersion = "1.81";
 
   const root = document.documentElement;
   const VERSION_STORAGE_KEY = "burrquizzz-installed-version";
