@@ -80,8 +80,8 @@ function isGenericGameQuestion(question) {
 
 function capitalizeAnswerItem(value) {
   if (typeof value !== "string" || !value) return value;
-  return value.replace(/^(\s*)(\p{Ll})/u, (_, spaces, letter) => (
-    `${spaces}${letter.toLocaleUpperCase("pt-BR")}`
+  return value.replace(/^([^\p{L}]*)(\p{Ll})/u, (_, prefix, letter) => (
+    `${prefix}${letter.toLocaleUpperCase("pt-BR")}`
   ));
 }
 
@@ -104,6 +104,42 @@ function normalizeAnswerCapitalization(question) {
   return normalized;
 }
 
+function distributeV181CorrectAnswer(question) {
+  const id = String(question?.id || "");
+  if (
+    !id.startsWith("v181-") ||
+    question?.type !== "multiple_choice" ||
+    !Array.isArray(question?.options) ||
+    question.options.length !== 4
+  ) {
+    return question;
+  }
+
+  const currentCorrectIndex = Number(question.correctIndex);
+  if (!Number.isInteger(currentCorrectIndex) || currentCorrectIndex < 0 || currentCorrectIndex > 3) {
+    return question;
+  }
+
+  const numericId = Number(id.split("-").at(-1));
+  const targetIndex = Number.isFinite(numericId) ? Math.max(0, numericId - 1) % 4 : 0;
+  if (targetIndex === currentCorrectIndex) return question;
+
+  const correctAnswer = question.options[currentCorrectIndex];
+  const distractors = question.options.filter((_, index) => index !== currentCorrectIndex);
+  const options = [...distractors];
+  options.splice(targetIndex, 0, correctAnswer);
+
+  return {
+    ...question,
+    options,
+    correctIndex: targetIndex
+  };
+}
+
+function prepareQuestion(question) {
+  return distributeV181CorrectAnswer(normalizeAnswerCapitalization(question));
+}
+
 function applyEditorialPolicy(question) {
   return isCuriousComicQuestion(question) && isGenericGameQuestion(question);
 }
@@ -115,15 +151,15 @@ const BASE_WITHOUT_LEGACY_IMAGES = BASE_QUESTIONS.filter(
 
 const CURATED_BASE = BASE_WITHOUT_LEGACY_IMAGES
   .filter(applyEditorialPolicy)
-  .map(normalizeAnswerCapitalization);
+  .map(prepareQuestion);
 
 const CURATED_V181 = v181Questions
   .filter(applyEditorialPolicy)
-  .map(normalizeAnswerCapitalization);
+  .map(prepareQuestion);
 
 const CURATED_VISUALS = visualQuestions
   .filter(applyEditorialPolicy)
-  .map(normalizeAnswerCapitalization);
+  .map(prepareQuestion);
 
 export const QUESTIONS = [
   ...CURATED_BASE,
@@ -162,6 +198,15 @@ const v181CategoryCounts = CURATED_V181.reduce((counts, question) => {
   }
 });
 
+const answerPositionCounts = CURATED_V181.reduce((counts, question) => {
+  counts[question.correctIndex] = (counts[question.correctIndex] || 0) + 1;
+  return counts;
+}, [0, 0, 0, 0]);
+
+if (Math.max(...answerPositionCounts) - Math.min(...answerPositionCounts) > 1) {
+  throw new Error(`Distribuição de respostas v1.81 desequilibrada: ${answerPositionCounts.join("/")}.`);
+}
+
 const ids = QUESTIONS.map((question) => String(question?.id || ""));
 if (new Set(ids).size !== ids.length) {
   throw new Error("O banco ativo contém IDs de perguntas duplicados.");
@@ -172,7 +217,21 @@ const displayedAnswerLists = QUESTIONS.flatMap((question) => [
   ...(Array.isArray(question.rightItems) ? question.rightItems : [])
 ]);
 
-const lowerCaseAnswer = displayedAnswerLists.find((answer) => /^(\s*)\p{Ll}/u.test(String(answer)));
+const lowerCaseAnswer = displayedAnswerLists.find((answer) => /^[^\p{L}]*\p{Ll}/u.test(String(answer)));
 if (lowerCaseAnswer) {
   throw new Error(`Item de resposta começa com caixa-baixa: ${lowerCaseAnswer}`);
+}
+
+if (typeof window !== "undefined") {
+  window.BURRQUIZZZ_VERSION = "1.81";
+}
+
+if (typeof document !== "undefined") {
+  Promise.resolve().then(() => {
+    const badge = document.querySelector("#burrAppVersion");
+    if (!badge) return;
+    badge.textContent = "v1.81";
+    badge.title = "Burrquizzz versão 1.81";
+    badge.setAttribute("aria-label", "Versão 1.81");
+  });
 }
