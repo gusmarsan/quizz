@@ -1,0 +1,179 @@
+:root {
+  --profile-cream: #f5f0e6;
+  --profile-muted: #d7cab2;
+  --profile-gold: #e2a93b;
+  --profile-gold-hi: #f1c45c;
+  --profile-ink: #08151d;
+  --profile-ui: "DM Sans", "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+.real-home__avatar.profile-avatar-action {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.real-home__avatar.profile-avatar-action.has-photo {
+  color: transparent;
+  text-shadow: none;
+  background-color: #102a33;
+}
+
+.real-home__avatar.profile-avatar-action::after {
+  content: "+";
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  display: grid;
+  width: 17px;
+  height: 17px;
+  place-items: center;
+  color: #171208;
+  border: 1px solid rgba(23,18,8,.3);
+  border-radius: 50%;
+  background: var(--profile-gold-hi);
+  box-shadow: 0 2px 6px rgba(0,0,0,.35);
+  font: 800 .72rem/1 var(--profile-ui);
+}
+
+.real-home__avatar.profile-avatar-action.has-photo::after {
+  content: "✎";
+  font-size: .58rem;
+}
+
+.real-home__avatar.profile-avatar-action:focus-visible {
+  outline: 3px solid var(--profile-gold-hi);
+  outline-offset: 4px;
+}
+
+#screen-online-menu .profile-photo-link {
+  display: inline-flex;
+  width: auto;
+  min-height: 28px;
+  align-items: center;
+  margin: -13px 0 18px 2px;
+  padding: 0;
+  color: var(--profile-gold-hi);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font: 700 .78rem/1.2 var(--profile-ui);
+  letter-spacing: 0;
+  text-decoration: underline;
+  text-decoration-color: rgba(241,196,92,.45);
+  text-underline-offset: 3px;
+  text-transform: none;
+  cursor: pointer;
+}
+
+#screen-online-menu .profile-photo-link:hover {
+  color: #ffe095;
+  text-decoration-color: currentColor;
+}
+
+#screen-online-menu .profile-photo-link:focus-visible {
+  outline: 2px solid var(--profile-gold-hi);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.profile-photo-dialog {
+  width: min(calc(100vw - 32px), 410px);
+  padding: 0;
+  color: var(--profile-cream);
+  border: 1px solid rgba(226,169,59,.42);
+  border-radius: 20px;
+  background: linear-gradient(145deg,#102a33,#07161d 72%);
+  box-shadow: 0 28px 80px rgba(0,0,0,.62), inset 0 1px rgba(255,255,255,.05);
+  font-family: var(--profile-ui);
+}
+
+.profile-photo-dialog::backdrop {
+  background: rgba(1,7,10,.72);
+  backdrop-filter: blur(6px);
+}
+
+.profile-photo-dialog__card {
+  display: grid;
+  gap: 16px;
+  padding: 26px 24px 22px;
+}
+
+.profile-photo-dialog__head {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+
+.profile-photo-dialog__eyebrow {
+  margin: 0;
+  color: var(--profile-gold-hi);
+  font: 800 .7rem/1.2 var(--profile-ui);
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.profile-photo-dialog h2 {
+  margin: 0;
+  color: var(--profile-cream);
+  font: 800 1.35rem/1.15 var(--profile-ui);
+  letter-spacing: -.02em;
+}
+
+.profile-photo-dialog__copy {
+  margin: 0;
+  color: var(--profile-muted);
+  font: 500 .8rem/1.45 var(--profile-ui);
+}
+
+.profile-photo-dialog__actions {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-photo-dialog .profile-photo-dialog__choose,
+.profile-photo-dialog .profile-photo-dialog__remove,
+.profile-photo-dialog .profile-photo-dialog__cancel {
+  min-height: 48px;
+  border-radius: 11px;
+  font: 800 .86rem/1.1 var(--profile-ui);
+  letter-spacing: .02em;
+}
+
+.profile-photo-dialog .profile-photo-dialog__choose {
+  color: #171208;
+  border: 1px solid #f8d777;
+  background: linear-gradient(180deg,#f8d777,#e2a93b 68%,#bd751f);
+}
+
+.profile-photo-dialog .profile-photo-dialog__remove,
+.profile-photo-dialog .profile-photo-dialog__cancel {
+  color: var(--profile-cream);
+  border: 1px solid rgba(215,202,178,.22);
+  background: rgba(4,15,20,.62);
+}
+
+.profile-photo-dialog .profile-photo-dialog__remove {
+  color: #f3b7ad;
+}
+
+.profile-photo-dialog .profile-photo-dialog__remove[hidden] {
+  display: none;
+}
+
+@media (max-width: 680px) {
+  #screen-online-menu .profile-photo-link {
+    margin-top: -10px;
+    margin-bottom: 16px;
+    font-size: .8rem;
+  }
+
+  .profile-photo-dialog__card {
+    padding: 24px 20px 20px;
+  }
+}
