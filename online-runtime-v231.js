@@ -348,15 +348,20 @@ function renderLobby() {
   $("#lobbyRoomCode").textContent = roomCode;
   const codeCard = $("#copyRoomCodeButton");
   if (codeCard) {
-    const label = $("span", codeCard);
-    const small = $("small", codeCard);
+    const label = $(".room-code-label", codeCard);
+    const action = $(".room-code-action-text", codeCard);
     if (label) label.textContent = "Convite da sala";
-    if (small) small.textContent = "Compartilhar link";
+    if (action) action.textContent = "Compartilhar link";
   }
 
   $("#playerOneName").textContent = roomData?.player1?.name || getSavedName() || "Você";
   $("#playerTwoName").textContent = roomData?.player2?.name || "Aguardando...";
   $("#playerTwoDot")?.classList.toggle("online", Boolean(roomData?.player2));
+  const playerTwoState = $("#playerTwoState");
+  if (playerTwoState) {
+    playerTwoState.textContent = roomData?.player2 ? "Conectado" : "Aguardando";
+    playerTwoState.classList.toggle("is-online", Boolean(roomData?.player2));
+  }
 
   const hint = $("#lobbyHint");
   if (hint) {

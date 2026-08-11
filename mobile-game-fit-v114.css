@@ -36,7 +36,6 @@
     margin-bottom: 8px;
   }
 
-  #screen-game.active .score-chip,
   #screen-game.active .opponent-badge {
     min-height: 48px;
     padding: 6px 9px;
@@ -63,7 +62,7 @@
   }
 
   #screen-game.active .question-card h2 {
-    margin: 10px auto 11px;
+    margin: 13px auto 10px;
     font-size: clamp(1.28rem, 6vw, 1.58rem);
     line-height: 1.1;
   }
@@ -201,7 +200,6 @@
     padding-top: 7px;
   }
 
-  #screen-game.active .score-chip,
   #screen-game.active .opponent-badge {
     min-height: 44px;
   }
@@ -211,7 +209,7 @@
   }
 
   #screen-game.active .question-card h2 {
-    margin-block: 8px 9px;
+    margin-block: 12px 9px;
     font-size: clamp(1.18rem, 5.45vw, 1.45rem);
   }
 

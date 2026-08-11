@@ -1,6 +1,6 @@
-const BURRQUIZZZ_VERSION = "1.2";
-const MOBILE_FIT_REVISION = "1.2-fit3";
-const COUNTDOWN_STYLE_REVISION = "1.2";
+const BURRQUIZZZ_VERSION = "1.53";
+const MOBILE_FIT_REVISION = "1.53";
+const COUNTDOWN_STYLE_REVISION = "1.53";
 const PULL_REFRESH_THRESHOLD = 72;
 const PULL_REFRESH_MAX = 118;
 const PULL_REFRESH_BLOCKED_SCREENS = new Set(["screen-game", "screen-countdown"]);
@@ -35,6 +35,15 @@ const countdownStyles = document.createElement("link");
 countdownStyles.rel = "stylesheet";
 countdownStyles.href = `./countdown-v12.css?v=${COUNTDOWN_STYLE_REVISION}`;
 document.head.appendChild(countdownStyles);
+
+const countdownValue = document.querySelector("#countdownValue");
+if (countdownValue) {
+  const syncCountdownPresentation = () => {
+    countdownValue.classList.toggle("is-go", countdownValue.textContent.trim().toUpperCase() === "JÁ");
+  };
+  syncCountdownPresentation();
+  new MutationObserver(syncCountdownPresentation).observe(countdownValue, { childList: true, characterData: true, subtree: true });
+}
 
 const refreshReleaseMetadata = () => {
   const manifestLink = document.querySelector('link[rel="manifest"]');

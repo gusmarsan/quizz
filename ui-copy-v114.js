@@ -1,7 +1,7 @@
 /* Burrquizzz — UI copy refinements + Home variations + v1.5 lobby */
 
-const RELEASE_VERSION = "1.5";
-const LOBBY_PLAYERS_REVISION = "1.5.1";
+const RELEASE_VERSION = "1.53";
+const LOBBY_PLAYERS_REVISION = "1.53";
 
 /* v1.5: load the redesigned duel lobby after legacy styles so it wins the cascade. */
 if (!document.querySelector('link[data-burr-lobby-v15]')) {

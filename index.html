@@ -10,28 +10,28 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Burrquizzz" />
   <title>Burrquizzz</title>
-  <link rel="manifest" href="manifest.webmanifest?v=1.2" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=1.2" />
-  <link rel="icon" type="image/svg+xml" href="icons/burrquizzz-icon.svg?v=1.2" />
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=1.2" />
+  <link rel="manifest" href="manifest.webmanifest?v=1.53" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=1.53" />
+  <link rel="icon" type="image/svg+xml" href="icons/burrquizzz-icon.svg?v=1.53" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=1.53" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&amp;family=Fraunces:opsz,wght@9..144,900&amp;display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=1.0" />
-  <link rel="stylesheet" href="visual-polish.css?v=1.0" />
-  <link rel="stylesheet" href="duel-results-v061.css?v=1.0" />
-  <link rel="stylesheet" href="game-responsive-v07.css?v=1.0" />
-  <link rel="stylesheet" href="solo-feedback-v074.css?v=1.0" />
-  <link rel="stylesheet" href="mobile-viewport-lock-v081.css?v=1.2" />
-  <link rel="stylesheet" href="home-preview-2.css?v=1.0" />
-  <link rel="stylesheet" href="setup-screens-approved.css?v=1.0" />
-  <link rel="stylesheet" href="production-v1.css?v=1.0" />
-  <link rel="stylesheet" href="button-typography-v112.css?v=1.14.2" />
+  <link rel="stylesheet" href="styles.css?v=1.53" />
+  <link rel="stylesheet" href="visual-polish.css?v=1.53" />
+  <link rel="stylesheet" href="duel-results-v061.css?v=1.53" />
+  <link rel="stylesheet" href="game-responsive-v07.css?v=1.53" />
+  <link rel="stylesheet" href="solo-feedback-v074.css?v=1.53" />
+  <link rel="stylesheet" href="mobile-viewport-lock-v081.css?v=1.53" />
+  <link rel="stylesheet" href="home-preview-2.css?v=1.53" />
+  <link rel="stylesheet" href="setup-screens-approved.css?v=1.53" />
+  <link rel="stylesheet" href="production-v1.css?v=1.53" />
+  <link rel="stylesheet" href="button-typography-v112.css?v=1.53" />
   <script type="importmap">
   {
     "imports": {
-      "./questions.js": "./questions.js?v=1.0",
-      "./duel-question-bank-v252.js": "./duel-question-bank-v252.js?v=1.0"
+      "./questions.js": "./questions.js?v=1.53",
+      "./duel-question-bank-v252.js": "./duel-question-bank-v252.js?v=1.53"
     }
   }
   </script>
@@ -90,7 +90,21 @@
 
     <section id="screen-lobby" class="screen">
       <button id="leaveRoomButton" class="back-link" type="button">← Sair da sala</button>
-      <div class="panel lobby-panel"><p class="eyebrow">Sala pronta</p><h2>Convide quem vai perder</h2><button id="copyRoomCodeButton" class="room-code-card" type="button" title="Copiar código"><span>Código da sala</span><strong id="lobbyRoomCode">------</strong><small>Toque para copiar</small></button><div class="players-list"><div class="player-slot"><span class="status-dot online"></span><div><small>Jogador 1</small><strong id="playerOneName">Aguardando...</strong></div></div><div class="player-slot"><span id="playerTwoDot" class="status-dot"></span><div><small>Jogador 2</small><strong id="playerTwoName">Aguardando...</strong></div></div></div><label class="field" id="duelCountField"><span>Quantidade de perguntas</span><select id="duelCount"><option value="10">10 perguntas</option><option value="15" selected>15 perguntas</option><option value="16">16 perguntas</option></select></label><button id="startDuelButton" class="primary-button" type="button" disabled>Aguardando adversário</button><p id="lobbyHint" class="hint">Abra o jogo em outro navegador, celular ou aba anônima para testar.</p></div>
+      <div class="panel lobby-panel">
+        <p class="eyebrow">Sala pronta</p>
+        <h2>Convide quem vai perder</h2>
+        <button id="copyRoomCodeButton" class="room-code-card" type="button" title="Copiar código">
+          <span class="room-code-label">Código da sala</span>
+          <strong id="lobbyRoomCode">------</strong>
+          <span class="room-code-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.7 12.9 15.3 16.7M15.3 7.3 8.7 11.1M18 8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM6 14.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM18 20.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg><span class="room-code-action-text">Toque para copiar</span></span>
+        </button>
+        <div class="players-list" aria-label="Jogadores da sala">
+          <div class="player-slot"><span class="status-dot online" aria-hidden="true"></span><div class="player-copy"><small>Jogador 1</small><strong id="playerOneName">Aguardando...</strong></div><span id="playerOneState" class="player-state is-online">Conectado</span></div>
+          <div class="player-slot"><span id="playerTwoDot" class="status-dot" aria-hidden="true"></span><div class="player-copy"><small>Jogador 2</small><strong id="playerTwoName">Aguardando...</strong></div><span id="playerTwoState" class="player-state">Aguardando</span></div>
+        </div>
+        <div class="lobby-controls"><label class="field" id="duelCountField"><span>Quantidade de perguntas</span><select id="duelCount"><option value="10">10 perguntas</option><option value="15" selected>15 perguntas</option><option value="16">16 perguntas</option></select></label><button id="startDuelButton" class="primary-button" type="button" disabled>Aguardando adversário</button></div>
+        <p id="lobbyHint" class="hint">Abra o jogo em outro navegador, celular ou aba anônima para testar.</p>
+      </div>
     </section>
 
     <section id="screen-countdown" class="screen centered"><p class="eyebrow">Prepare-se</p><div id="countdownValue" class="countdown">3</div><p id="countdownMessage">A rodada vai começar</p></section>
@@ -115,13 +129,13 @@
 
   <dialog id="firebaseDialog"><form method="dialog" class="dialog-card"><button class="dialog-close" value="cancel" aria-label="Fechar">×</button><p class="eyebrow">Duelo online</p><h2>Configurar Firebase</h2><p class="dialog-copy">Cole o objeto <code>firebaseConfig</code> do seu projeto. Ele fica salvo só neste navegador.</p><label class="field"><span>Configuração</span><textarea id="firebaseConfigInput" rows="10" spellcheck="false" placeholder='{"apiKey":"...","authDomain":"...","databaseURL":"...","projectId":"...","appId":"..."}'></textarea></label><p id="firebaseStatus" class="hint"></p><button id="saveFirebaseButton" class="primary-button" value="cancel" type="button">Salvar configuração</button><button id="clearFirebaseButton" class="ghost-button danger" value="cancel" type="button">Apagar configuração</button></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <div id="burrAppVersion" title="Burrquizzz versão 1.2" aria-label="Versão 1.2">v1.2</div>
-  <script type="module" src="ai-bootstrap.js?v=1.0"></script>
-  <script type="module" src="online-runtime-v231.js?v=1.0"></script>
-  <script type="module" src="duel-results-v061.js?v=1.0"></script>
-  <script type="module" src="app.js?v=1.0"></script>
-  <script type="module" src="ui-copy-v114.js?v=1.2.5"></script>
-  <script type="module" src="metrics-runtime-v09.js?v=1.0"></script>
-  <script type="module" src="pwa-runtime.js?v=1.2"></script>
+  <div id="burrAppVersion" title="Burrquizzz versão 1.53" aria-label="Versão 1.53">v1.53</div>
+  <script type="module" src="ai-bootstrap.js?v=1.53"></script>
+  <script type="module" src="online-runtime-v231.js?v=1.53"></script>
+  <script type="module" src="duel-results-v061.js?v=1.53"></script>
+  <script type="module" src="app.js?v=1.53"></script>
+  <script type="module" src="ui-copy-v114.js?v=1.53"></script>
+  <script type="module" src="metrics-runtime-v09.js?v=1.53"></script>
+  <script type="module" src="pwa-runtime.js?v=1.53"></script>
 </body>
 </html>

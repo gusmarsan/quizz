@@ -95,7 +95,7 @@ body:has(#screen-lobby.active) .brand-mark {
   border: 1px solid var(--lobby-line);
   border-radius: 20px;
   background: radial-gradient(circle at 50% 0,rgba(226,169,59,.08),transparent 15rem),linear-gradient(145deg,var(--lobby-panel-hi),var(--lobby-panel));
-  box-shadow: 0 28px 64px rgba(0,0,0,.45),inset 0 1px rgba(255,255,255,.05),inset 0 0 40px rgba(226,169,59,.025);
+  box-shadow: 0 28px 64px rgba(0,0,0,.45),inset 0 1px rgba(255,255,255,.05);
   backdrop-filter: none;
 }
 
@@ -132,16 +132,17 @@ body:has(#screen-lobby.active) .brand-mark {
   display: grid;
   width: 100%;
   margin: 0 0 18px;
-  padding: 20px 18px 18px;
+  padding: 22px 18px 18px;
   place-items: center;
   color: var(--lobby-muted);
-  border: 1px solid rgba(241,196,92,.46);
+  border: 1px solid rgba(241,196,92,.68);
   border-radius: 16px;
-  background: linear-gradient(180deg,rgba(4,15,20,.82),rgba(9,28,35,.92));
-  box-shadow: inset 0 1px rgba(255,255,255,.04),0 14px 28px rgba(0,0,0,.24);
+  background: linear-gradient(180deg,rgba(11,34,41,.94),rgba(4,17,23,.98));
+  box-shadow: 0 16px 32px rgba(0,0,0,.28);
+  transition: transform 150ms ease,border-color 150ms ease,background 150ms ease;
 }
 
-#screen-lobby .room-code-card span {
+#screen-lobby .room-code-card .room-code-label {
   color: var(--lobby-muted);
   font: 800 .7rem var(--lobby-interface);
   letter-spacing: .12em;
@@ -151,20 +152,40 @@ body:has(#screen-lobby.active) .brand-mark {
 #screen-lobby .room-code-card strong {
   margin: 8px 0 5px;
   color: var(--lobby-gold-hi);
-  font: 900 clamp(2.25rem,9vw,3.45rem)/1 var(--lobby-interface);
+  font: 900 clamp(2.45rem,9vw,3.7rem)/1 var(--lobby-interface);
   letter-spacing: .13em;
   text-shadow: 0 3px 16px rgba(226,169,59,.18);
 }
 
-#screen-lobby .room-code-card small {
-  color: rgba(215,202,178,.78);
-  font: 600 .72rem var(--lobby-interface);
+#screen-lobby .room-code-action {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 7px;
+  margin-top: 3px;
+  padding: 5px 10px;
+  color: var(--lobby-gold-hi);
+  border-radius: 10px;
+  background: rgba(226,169,59,.09);
+  font: 750 .79rem var(--lobby-interface);
+}
+
+#screen-lobby .room-code-action svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 #screen-lobby .room-code-card:hover {
   border-color: rgba(241,196,92,.8);
   background: linear-gradient(180deg,rgba(8,24,30,.9),rgba(13,34,41,.96));
 }
+
+#screen-lobby .room-code-card:active { transform: translateY(1px); }
 
 #screen-lobby .players-list {
   display: grid;
@@ -207,6 +228,14 @@ body:has(#screen-lobby.active) .brand-mark {
   margin: 0 0 16px;
 }
 
+#screen-lobby .lobby-controls {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+#screen-lobby .lobby-controls:has(> .hidden):not(:has(> :not(.hidden))) { display: none; }
+
 #screen-lobby #duelCountField > span {
   color: var(--lobby-muted);
   font: 750 .78rem var(--lobby-interface);
@@ -242,8 +271,8 @@ body:has(#screen-lobby.active) .brand-mark {
 #screen-lobby #lobbyHint {
   max-width: 540px;
   margin: 13px auto 0;
-  color: rgba(215,202,178,.68);
-  font: 500 .76rem/1.45 var(--lobby-interface);
+  color: rgba(215,202,178,.82);
+  font: 550 .82rem/1.48 var(--lobby-interface);
   text-align: center;
 }
 
@@ -261,17 +290,16 @@ body:has(#screen-lobby.active) .brand-mark {
 
   #screen-lobby.active {
     min-height: calc(100dvh - 78px);
-    max-height: calc(100dvh - 78px);
     padding: 17px 16px max(24px,env(safe-area-inset-bottom));
     overflow-x: hidden;
     overflow-y: auto;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(241,196,92,.52) transparent;
     border-radius: 24px;
   }
 
-  #screen-lobby.active::-webkit-scrollbar { display: none; }
+  #screen-lobby.active::-webkit-scrollbar { width: 4px; }
+  #screen-lobby.active::-webkit-scrollbar-thumb { border-radius: 4px; background: rgba(241,196,92,.52); }
 
   #screen-lobby .lobby-panel {
     margin-top: 10px;
@@ -281,7 +309,8 @@ body:has(#screen-lobby.active) .brand-mark {
 
   #screen-lobby h2 {
     margin-bottom: 20px;
-    font-size: clamp(2.15rem,10.5vw,2.9rem);
+    font-size: clamp(1.85rem,8.7vw,2.45rem);
+    line-height: .98;
   }
 
   #screen-lobby .room-code-card {
@@ -290,13 +319,14 @@ body:has(#screen-lobby.active) .brand-mark {
   }
 
   #screen-lobby .room-code-card strong {
-    font-size: clamp(2rem,10vw,3rem);
+    font-size: clamp(2.2rem,11vw,3.1rem);
   }
 
   #screen-lobby .players-list { margin-bottom: 14px; }
   #screen-lobby .player-slot { min-height: 58px; padding: 10px 12px; }
   #screen-lobby #duelCountField { margin-bottom: 13px; }
   #screen-lobby #startDuelButton { min-height: 54px; }
+  #screen-lobby .lobby-controls { margin-top: 14px; }
 }
 
 @media (max-width: 680px) and (max-height: 760px) {
@@ -305,4 +335,14 @@ body:has(#screen-lobby.active) .brand-mark {
   #screen-lobby .room-code-card { padding-block: 13px 12px; }
   #screen-lobby .player-slot { min-height: 54px; padding-block: 8px; }
   #screen-lobby #lobbyHint { margin-top: 9px; }
+}
+
+@media (max-width: 680px) and (max-height: 640px) {
+  body:has(#screen-lobby.active) .topbar { margin-bottom: 4px; }
+  #screen-lobby.active { padding-top: 12px; }
+  #screen-lobby .back-link { min-height: 40px; }
+  #screen-lobby .lobby-panel { margin-top: 6px; padding-block: 18px 16px; }
+  #screen-lobby h2 { margin-bottom: 13px; font-size: clamp(1.75rem,8.2vw,2.2rem); }
+  #screen-lobby .room-code-card { margin-bottom: 11px; padding-block: 12px 10px; }
+  #screen-lobby .room-code-card strong { margin-block: 5px 3px; }
 }

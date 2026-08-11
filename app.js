@@ -60,6 +60,8 @@ const elements = {
   lobbyRoomCode: $("#lobbyRoomCode"),
   playerOneName: $("#playerOneName"),
   playerTwoName: $("#playerTwoName"),
+  playerOneState: $("#playerOneState"),
+  playerTwoState: $("#playerTwoState"),
   playerTwoDot: $("#playerTwoDot"),
   duelCountField: $("#duelCountField"),
   lobbyHint: $("#lobbyHint"),
@@ -783,6 +785,14 @@ function renderLobby() {
   elements.playerOneName.textContent = first?.name || "Aguardando...";
   elements.playerTwoName.textContent = second?.name || "Aguardando...";
   elements.playerTwoDot.classList.toggle("online", Boolean(second));
+  if (elements.playerOneState) {
+    elements.playerOneState.textContent = first ? "Conectado" : "Aguardando";
+    elements.playerOneState.classList.toggle("is-online", Boolean(first));
+  }
+  if (elements.playerTwoState) {
+    elements.playerTwoState.textContent = second ? "Conectado" : "Aguardando";
+    elements.playerTwoState.classList.toggle("is-online", Boolean(second));
+  }
   elements.duelCount.value = String(state.room.questionCount || 15);
   elements.duelCount.disabled = !state.isHost;
   elements.duelCountField.classList.toggle("hidden", !state.isHost);

@@ -208,8 +208,12 @@ body:has(#screen-game.active) .topbar {
   }
 
   #screen-game .game-header {
-    grid-template-columns: min-content minmax(72px, 1fr) min-content;
+    grid-template-columns: min-content minmax(0, 1fr) min-content;
     gap: 6px;
+  }
+
+  #screen-game .game-header:has(> .opponent-badge:not(.hidden)) {
+    grid-template-columns: min-content minmax(72px, 1fr) min-content;
   }
 
   #screen-game .opponent-badge {

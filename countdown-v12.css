@@ -109,17 +109,24 @@ body:has(#screen-countdown.active) #burrAppVersion {
   text-indent: -.075em;
   text-shadow:
     0 3px 0 #9a5b22,
-    0 7px 0 #4a2912,
-    0 18px 40px rgba(0, 0, 0, .62),
-    0 0 34px rgba(226, 169, 59, .14);
-  filter: drop-shadow(0 0 14px rgba(241, 196, 92, .08));
+    0 6px 0 #4a2912,
+    0 15px 34px rgba(0, 0, 0, .56),
+    0 0 26px rgba(226, 169, 59, .11);
+  filter: drop-shadow(0 0 10px rgba(241, 196, 92, .07));
+}
+
+#screen-countdown.active .countdown.is-go {
+  letter-spacing: -.04em;
+  text-indent: 0;
+  text-shadow: 0 2px 0 #9a5b22,0 5px 0 #4a2912,0 12px 28px rgba(0,0,0,.5);
+  filter: none;
 }
 
 #screen-countdown.active #countdownMessage {
-  max-width: 22ch;
+  width: min(100%,20ch);
   margin: clamp(24px, 4vh, 36px) auto 0;
   color: var(--countdown-cream);
-  font: 900 clamp(1.3rem, 5.4vw, 2rem) / 1.08 var(--countdown-display);
+  font: 900 clamp(1.22rem, 5vw, 1.88rem) / 1.1 var(--countdown-display);
   letter-spacing: -.025em;
   text-wrap: balance;
   text-shadow: 0 3px 18px rgba(0, 0, 0, .68);
@@ -146,8 +153,10 @@ body:has(#screen-countdown.active) #burrAppVersion {
   }
 
   #screen-countdown.active .eyebrow {
-    margin-top: clamp(42px, 8vh, 68px);
+    margin-top: clamp(34px, 6vh, 54px);
   }
+
+  #screen-countdown.active > * { transform: translateY(-5dvh); }
 }
 
 @media (max-height: 720px) {
@@ -156,7 +165,7 @@ body:has(#screen-countdown.active) #burrAppVersion {
   }
 
   #screen-countdown.active .eyebrow {
-    margin-top: 36px;
+    margin-top: 28px;
     margin-bottom: 12px;
   }
 
@@ -172,6 +181,22 @@ body:has(#screen-countdown.active) #burrAppVersion {
   #screen-countdown.active #countdownMessage::after {
     margin-top: 18px;
   }
+}
+
+@media (max-height: 620px), (orientation: landscape) and (max-height: 760px) {
+  body:has(#screen-countdown.active) .app-shell { height: auto; min-height: 100dvh; overflow: visible; }
+  #screen-countdown.active {
+    min-height: calc(100dvh - 16px);
+    height: auto;
+    padding-block: 24px;
+    overflow: visible;
+  }
+  #screen-countdown.active::before { top: 18px; font-size: 1.55rem; }
+  #screen-countdown.active > * { transform: none; }
+  #screen-countdown.active .eyebrow { margin: 34px 0 9px; }
+  #screen-countdown.active .countdown { min-width: min(48vw,260px); font-size: clamp(5.4rem,24vh,8rem); }
+  #screen-countdown.active #countdownMessage { width: min(88vw,34ch); margin-top: 14px; font-size: clamp(1.05rem,4.2vw,1.45rem); }
+  #screen-countdown.active #countdownMessage::after { margin-top: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
