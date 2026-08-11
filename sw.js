@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "burrquizzz-pwa-";
-const CACHE_NAME = `${CACHE_PREFIX}v1.2-1`;
+const CACHE_NAME = `${CACHE_PREFIX}v1.2-2`;
 const APP_SHELL = [
   "./",
   "./index.html",
