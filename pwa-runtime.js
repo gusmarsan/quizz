@@ -1,4 +1,4 @@
-const BURRQUIZZZ_VERSION = "1.13";
+const BURRQUIZZZ_VERSION = "1.14";
 const PULL_REFRESH_THRESHOLD = 72;
 const PULL_REFRESH_MAX = 118;
 const PULL_REFRESH_BLOCKED_SCREENS = new Set(["screen-game", "screen-countdown"]);
@@ -18,6 +18,11 @@ const pullRefreshStyles = document.createElement("link");
 pullRefreshStyles.rel = "stylesheet";
 pullRefreshStyles.href = `./pull-refresh-v113.css?v=${BURRQUIZZZ_VERSION}`;
 document.head.appendChild(pullRefreshStyles);
+
+const avatarProfileStyles = document.createElement("link");
+avatarProfileStyles.rel = "stylesheet";
+avatarProfileStyles.href = `./avatar-profile-v114.css?v=${BURRQUIZZZ_VERSION}`;
+document.head.appendChild(avatarProfileStyles);
 
 const refreshReleaseMetadata = () => {
   const manifestLink = document.querySelector('link[rel="manifest"]');
@@ -48,6 +53,9 @@ const refreshReleaseMetadata = () => {
     versionBadge.setAttribute("aria-label", `Versão ${BURRQUIZZZ_VERSION}`);
   }
 };
+
+const loadAvatarProfile = () => import(`./avatar-profile-v114.js?v=${BURRQUIZZZ_VERSION}`)
+  .catch((error) => console.warn("Perfil: módulo de foto não pôde ser carregado.", error));
 
 const ensurePullRefreshIndicator = () => {
   let indicator = document.querySelector("#burrPullRefresh");
@@ -203,10 +211,12 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
     refreshReleaseMetadata();
     setupPullToRefresh();
+    loadAvatarProfile();
   }, { once: true });
 } else {
   refreshReleaseMetadata();
   setupPullToRefresh();
+  loadAvatarProfile();
 }
 
 if ("serviceWorker" in navigator) {
