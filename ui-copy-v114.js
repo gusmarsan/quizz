@@ -1,4 +1,45 @@
-/* Burrquizzz — UI copy refinements + Home variations */
+/* Burrquizzz — UI copy refinements + Home variations + v1.5 lobby */
+
+const RELEASE_VERSION = "1.5";
+
+/* v1.5: load the redesigned duel lobby after legacy styles so it wins the cascade. */
+if (!document.querySelector('link[data-burr-lobby-v15]')) {
+  const lobbyStyles = document.createElement("link");
+  lobbyStyles.rel = "stylesheet";
+  lobbyStyles.href = `./lobby-v15.css?v=${RELEASE_VERSION}`;
+  lobbyStyles.dataset.burrLobbyV15 = "true";
+  document.head.appendChild(lobbyStyles);
+}
+
+function applyReleaseMetadata() {
+  const badge = document.querySelector("#burrAppVersion");
+  if (badge) {
+    if (badge.textContent !== `v${RELEASE_VERSION}`) badge.textContent = `v${RELEASE_VERSION}`;
+    if (badge.title !== `Burrquizzz versão ${RELEASE_VERSION}`) badge.title = `Burrquizzz versão ${RELEASE_VERSION}`;
+    if (badge.getAttribute("aria-label") !== `Versão ${RELEASE_VERSION}`) badge.setAttribute("aria-label", `Versão ${RELEASE_VERSION}`);
+  }
+
+  const manifest = document.querySelector('link[rel="manifest"]');
+  if (manifest) manifest.href = `./manifest.webmanifest?v=${RELEASE_VERSION}`;
+
+  const pngIcon = document.querySelector('link[rel="icon"][type="image/png"]');
+  if (pngIcon) pngIcon.href = `./icons/icon-192.png?v=${RELEASE_VERSION}`;
+
+  const svgIcon = document.querySelector('link[rel="icon"][type="image/svg+xml"]');
+  if (svgIcon) svgIcon.href = `./icons/burrquizzz-icon.svg?v=${RELEASE_VERSION}`;
+
+  const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+  if (appleIcon) appleIcon.href = `./icons/apple-touch-icon.png?v=${RELEASE_VERSION}`;
+}
+
+applyReleaseMetadata();
+window.addEventListener("load", () => window.setTimeout(applyReleaseMetadata, 80), { once: true });
+
+const releaseBadge = document.querySelector("#burrAppVersion");
+if (releaseBadge) {
+  const releaseObserver = new MutationObserver(applyReleaseMetadata);
+  releaseObserver.observe(releaseBadge, { childList: true, subtree: true, attributes: true, attributeFilter: ["title", "aria-label"] });
+}
 
 const answersArea = document.querySelector("#answersArea");
 
