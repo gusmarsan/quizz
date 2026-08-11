@@ -1,4 +1,5 @@
 const CACHE_PREFIX = "burrquizzz-pwa-";
+const CACHE_REVISION = "result-outline-1";
 const RELEASE_VERSION = (() => {
   try {
     return new URL(self.location.href).searchParams.get("v") || "current";
@@ -6,7 +7,7 @@ const RELEASE_VERSION = (() => {
     return "current";
   }
 })();
-const CACHE_NAME = `${CACHE_PREFIX}v${RELEASE_VERSION}`;
+const CACHE_NAME = `${CACHE_PREFIX}v${RELEASE_VERSION}-${CACHE_REVISION}`;
 const versioned = (path) => `${path}?v=${encodeURIComponent(RELEASE_VERSION)}`;
 
 const APP_SHELL = [

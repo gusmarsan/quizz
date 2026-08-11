@@ -6,12 +6,14 @@
 #screen-results #duelScoreboard:not(.hidden) {
   width: min(100%, 600px);
   margin: 14px auto 10px;
-  border: 1px solid rgba(241, 196, 92, .46);
+  border: 1px solid rgba(241, 196, 92, .66);
   border-radius: 15px;
-  background:
-    radial-gradient(circle at 50% 0, rgba(241, 196, 92, .08), transparent 48%),
-    linear-gradient(145deg, rgba(16, 42, 51, .98), rgba(5, 18, 25, .995));
-  box-shadow: 0 14px 30px rgba(0, 0, 0, .32);
+  background: rgba(3, 13, 18, .08);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 240, 230, .11),
+    0 10px 24px rgba(0, 0, 0, .14),
+    0 0 14px rgba(226, 169, 59, .045);
+  text-shadow: 0 2px 7px rgba(0, 0, 0, .76);
 }
 
 #screen-results .result-player-avatar {
@@ -45,19 +47,6 @@
   min-height: 92px;
   padding: 13px 18px;
   text-align: left;
-  border-color: rgba(241, 196, 92, .58);
-  background:
-    radial-gradient(circle at 9% 50%, rgba(241, 196, 92, .145) 0, rgba(241, 196, 92, .045) 17%, transparent 34%),
-    radial-gradient(circle at 91% 43%, rgba(241, 196, 92, .105) 0, rgba(241, 196, 92, .03) 16%, transparent 31%),
-    radial-gradient(ellipse at 50% 118%, rgba(25, 76, 84, .34), transparent 59%),
-    linear-gradient(108deg, rgba(13, 45, 54, .995) 0%, rgba(5, 19, 27, .995) 48%, rgba(14, 41, 49, .995) 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(245, 240, 230, .075),
-    inset 0 -20px 38px rgba(0, 0, 0, .2),
-    inset 18px 0 36px rgba(0, 0, 0, .08),
-    inset -18px 0 36px rgba(0, 0, 0, .08),
-    0 15px 32px rgba(0, 0, 0, .35),
-    0 5px 18px rgba(226, 169, 59, .055);
 }
 
 #screen-results #soloStats .result-player-avatar {
@@ -143,17 +132,6 @@
   min-height: 208px;
   padding: 15px 18px;
   overflow: hidden;
-  border-color: rgba(241, 196, 92, .56);
-  background:
-    radial-gradient(circle at 50% 50%, rgba(241, 196, 92, .105) 0, rgba(241, 196, 92, .035) 24%, transparent 47%),
-    radial-gradient(ellipse at 50% 112%, rgba(24, 73, 81, .3), transparent 58%),
-    linear-gradient(112deg, rgba(5, 20, 28, .995) 0%, rgba(13, 42, 51, .99) 49%, rgba(5, 18, 26, .995) 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(245, 240, 230, .07),
-    inset 0 -26px 46px rgba(0, 0, 0, .2),
-    inset 24px 0 46px rgba(0, 0, 0, .12),
-    inset -24px 0 46px rgba(0, 0, 0, .12),
-    0 14px 30px rgba(0, 0, 0, .34);
 }
 
 #screen-results #duelScoreboard:not(.hidden)::before {
@@ -164,7 +142,7 @@
   width: 82px;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(241, 196, 92, .14), transparent 70%);
+  background: radial-gradient(circle, rgba(241, 196, 92, .055), transparent 70%);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
