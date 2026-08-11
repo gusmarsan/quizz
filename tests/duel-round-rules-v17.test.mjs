@@ -58,6 +58,15 @@ function room(count, firstAnswers, secondAnswers, extra = {}) {
   };
 }
 
+function recordPlayedRound(roundQuestions) {
+  assert.equal(getConfiguredDuelQuestionCount({
+    questionCount: roundQuestions.length,
+    roundConfigured: true,
+    status: "playing",
+    questions: roundQuestions
+  }), roundQuestions.length);
+}
+
 test("aceita rodadas configuradas de 4 e 16 perguntas", () => {
   assert.equal(getConfiguredDuelQuestionCount(room(4, [], [])), 4);
   assert.equal(getConfiguredDuelQuestionCount(room(16, [], [])), 16);
@@ -94,18 +103,29 @@ test("monta exatamente 4 ou 16 perguntas e prioriza as ainda não usadas", () =>
 test("v1.8 percorre o baralho inteiro antes de iniciar um novo ciclo", () => {
   withMemoryLocalStorage(() => {
     const bank = questionBank(40);
-    const rounds = [
-      buildDuelQuestionRound(bank, 4, [], () => .37, "cycle"),
-      buildDuelQuestionRound(bank, 16, [], () => .37, "cycle"),
-      buildDuelQuestionRound(bank, 16, [], () => .37, "cycle"),
-      buildDuelQuestionRound(bank, 4, [], () => .37, "cycle")
-    ];
+    const rounds = [];
+
+    const quick = buildDuelQuestionRound(bank, 4, [], () => .37, "cycle");
+    recordPlayedRound(quick);
+    rounds.push(quick);
+
+    const normalOne = buildDuelQuestionRound(bank, 16, [], () => .37, "cycle");
+    recordPlayedRound(normalOne);
+    rounds.push(normalOne);
+
+    const normalTwo = buildDuelQuestionRound(bank, 16, [], () => .37, "cycle");
+    recordPlayedRound(normalTwo);
+    rounds.push(normalTwo);
+
+    const finalQuick = buildDuelQuestionRound(bank, 4, [], () => .37, "cycle");
+    recordPlayedRound(finalQuick);
+    rounds.push(finalQuick);
 
     const firstCycleIds = rounds.flat().map((question) => question.id);
     assert.equal(firstCycleIds.length, 40);
     assert.equal(new Set(firstCycleIds).size, 40);
 
-    const lastRoundIds = new Set(rounds.at(-1).map((question) => question.id));
+    const lastRoundIds = new Set(finalQuick.map((question) => question.id));
     const nextCycleRound = buildDuelQuestionRound(bank, 4, [], () => .37, "cycle");
     assert.equal(nextCycleRound.some((question) => lastRoundIds.has(question.id)), false);
   });
