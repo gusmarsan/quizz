@@ -39,10 +39,12 @@ dialog .primary-button,
 #screen-game .primary-button,
 #screen-results .primary-button,
 dialog .primary-button {
-  text-transform: uppercase;
+  text-transform: uppercase !important;
 }
 
-/* SECONDARY ACTIONS = Home "Duelo online" */
+/* SECONDARY ACTIONS = Home "Duelo online".
+   Keep their existing transparent/outlined visual treatment; only the text
+   hierarchy changes here. */
 .secondary-button,
 #screen-online-menu .secondary-button,
 #screen-results .ghost-button,
@@ -57,8 +59,11 @@ dialog .primary-button {
 }
 
 .secondary-button,
-#screen-online-menu .secondary-button {
-  text-transform: uppercase;
+#screen-online-menu .secondary-button,
+#screen-results .ghost-button,
+.ghost-button:not(.small),
+.back-link {
+  text-transform: uppercase !important;
 }
 
 /* Small utility controls stay compact but use the same face. */
