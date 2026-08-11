@@ -85,6 +85,20 @@ self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
+async function cachedReleaseFallback(request) {
+  const exact = await caches.match(request);
+  if (exact) return exact;
+
+  try {
+    const fallbackUrl = new URL(request.url);
+    if (fallbackUrl.origin !== self.location.origin) return undefined;
+    fallbackUrl.searchParams.set("v", RELEASE_VERSION);
+    return caches.match(fallbackUrl.href);
+  } catch {
+    return undefined;
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
@@ -121,7 +135,7 @@ self.addEventListener("fetch", (event) => {
       }
       return response;
     } catch {
-      return caches.match(request);
+      return cachedReleaseFallback(request);
     }
   })());
 });
