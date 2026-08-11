@@ -1,6 +1,8 @@
 export const DUEL_QUESTION_COUNTS = Object.freeze([4, 16]);
 export const MAX_DUEL_QUESTIONS = 16;
 
+const DUEL_QUESTION_CYCLE_STORAGE_KEY = "quizDuelQuestionCycleV2";
+
 export function isValidDuelQuestionCount(value) {
   return DUEL_QUESTION_COUNTS.includes(Number(value));
 }
@@ -15,6 +17,87 @@ export function duelQuestionIdentity(question) {
   );
 }
 
+function isEligibleDuelQuestion(question) {
+  return Boolean(
+    question &&
+    (question.type === "multiple_choice" || question.type === "image_choice" || !question.type) &&
+    Array.isArray(question.options) &&
+    question.options.length === 4 &&
+    Number.isInteger(Number(question.correctIndex)) &&
+    Number(question.correctIndex) >= 0 &&
+    Number(question.correctIndex) < 4
+  );
+}
+
+function uniqueQuestionIds(items) {
+  const ids = [];
+  const seen = new Set();
+
+  for (const item of Array.isArray(items) ? items : []) {
+    const id = duelQuestionIdentity(item);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+  }
+
+  return ids;
+}
+
+function canUseLocalStorage() {
+  return typeof localStorage !== "undefined";
+}
+
+function loadDuelQuestionCycle() {
+  if (!canUseLocalStorage()) return { cycleIds: [], recentIds: [] };
+
+  try {
+    const stored = JSON.parse(localStorage.getItem(DUEL_QUESTION_CYCLE_STORAGE_KEY) || "null");
+    if (!stored || typeof stored !== "object" || Array.isArray(stored)) {
+      return { cycleIds: [], recentIds: [] };
+    }
+
+    return {
+      cycleIds: uniqueQuestionIds(stored.cycleIds),
+      recentIds: uniqueQuestionIds(stored.recentIds).slice(-MAX_DUEL_QUESTIONS)
+    };
+  } catch {
+    return { cycleIds: [], recentIds: [] };
+  }
+}
+
+function saveDuelQuestionCycle(state) {
+  if (!canUseLocalStorage()) return;
+
+  try {
+    localStorage.setItem(DUEL_QUESTION_CYCLE_STORAGE_KEY, JSON.stringify({
+      cycleIds: uniqueQuestionIds(state?.cycleIds),
+      recentIds: uniqueQuestionIds(state?.recentIds).slice(-MAX_DUEL_QUESTIONS)
+    }));
+  } catch {
+    // O duelo continua funcionando mesmo se o armazenamento local estiver indisponível.
+  }
+}
+
+function rememberPlayedDuelRound(roundQuestions) {
+  const selectedIds = uniqueQuestionIds(roundQuestions);
+  if (!selectedIds.length || !canUseLocalStorage()) return;
+
+  const state = loadDuelQuestionCycle();
+  const cycle = [...state.cycleIds];
+  const known = new Set(cycle);
+
+  selectedIds.forEach((id) => {
+    if (known.has(id)) return;
+    known.add(id);
+    cycle.push(id);
+  });
+
+  saveDuelQuestionCycle({
+    cycleIds: cycle,
+    recentIds: selectedIds
+  });
+}
+
 export function buildDuelQuestionRound(
   questionBank,
   questionCount,
@@ -24,16 +107,30 @@ export function buildDuelQuestionRound(
 ) {
   if (!isValidDuelQuestionCount(questionCount)) return [];
 
-  const previousIds = new Set(previousQuestions.map(duelQuestionIdentity));
-  const available = (Array.isArray(questionBank) ? questionBank : []).filter((question) =>
-    question &&
-    (question.type === "multiple_choice" || question.type === "image_choice" || !question.type) &&
-    Array.isArray(question.options) &&
-    question.options.length === 4 &&
-    Number.isInteger(Number(question.correctIndex)) &&
-    Number(question.correctIndex) >= 0 &&
-    Number(question.correctIndex) < 4
-  );
+  const available = (Array.isArray(questionBank) ? questionBank : []).filter(isEligibleDuelQuestion);
+  if (available.length < questionCount) return [];
+
+  const availableIds = new Set(available.map(duelQuestionIdentity));
+  const persisted = loadDuelQuestionCycle();
+  const persistedCycleIds = persisted.cycleIds.filter((id) => availableIds.has(id));
+  const explicitPreviousIds = uniqueQuestionIds(previousQuestions).filter((id) => availableIds.has(id));
+  const recentIds = uniqueQuestionIds([
+    ...persisted.recentIds,
+    ...explicitPreviousIds
+  ]).filter((id) => availableIds.has(id));
+
+  let cycleIds = uniqueQuestionIds([...persistedCycleIds, ...explicitPreviousIds]);
+  let usedIds = new Set(cycleIds);
+  let fresh = available.filter((question) => !usedIds.has(duelQuestionIdentity(question)));
+
+  // Se o baralho já acabou, começa um novo ciclo preservando apenas a rodada
+  // mais recente como bloqueio. Assim a primeira rodada do novo ciclo também
+  // não repete imediatamente o que acabou de aparecer.
+  if (fresh.length === 0 && usedIds.size) {
+    cycleIds = [...recentIds];
+    usedIds = new Set(cycleIds);
+    fresh = available.filter((question) => !usedIds.has(duelQuestionIdentity(question)));
+  }
 
   const shuffle = (items) => {
     const shuffled = [...items];
@@ -44,10 +141,29 @@ export function buildDuelQuestionRound(
     return shuffled;
   };
 
-  const fresh = shuffle(available.filter((question) => !previousIds.has(duelQuestionIdentity(question))));
-  const fallback = shuffle(available.filter((question) => previousIds.has(duelQuestionIdentity(question))));
+  const shuffledFresh = shuffle(fresh);
+  const freshSelected = shuffledFresh.slice(0, questionCount);
+  const stillNeeded = questionCount - freshSelected.length;
 
-  return [...fresh, ...fallback].slice(0, questionCount).map((question, index) => ({
+  let fallbackSelected = [];
+  if (stillNeeded > 0) {
+    const recentBlock = new Set(recentIds);
+    const olderUsed = shuffle(
+      available.filter((question) => {
+        const id = duelQuestionIdentity(question);
+        return usedIds.has(id) && !recentBlock.has(id);
+      })
+    );
+    const recentUsed = shuffle(
+      available.filter((question) => recentBlock.has(duelQuestionIdentity(question)))
+    );
+    fallbackSelected = [...olderUsed, ...recentUsed].slice(0, stillNeeded);
+  }
+
+  const rawSelected = [...freshSelected, ...fallbackSelected];
+  if (rawSelected.length !== questionCount) return [];
+
+  const selected = rawSelected.map((question, index) => ({
     id: String(question.id || `${idPrefix}-${Date.now()}-${index}`),
     type: question.type === "image_choice" ? "image_choice" : "multiple_choice",
     category: String(question.category || "Burrquizzz"),
@@ -60,31 +176,59 @@ export function buildDuelQuestionRound(
     imageCredit: String(question.imageCredit || ""),
     supportText: String(question.supportText || "")
   }));
+
+  if (canUseLocalStorage()) {
+    const selectedIds = selected.map(duelQuestionIdentity);
+    const crossedCycleBoundary = freshSelected.length < questionCount;
+
+    if (crossedCycleBoundary) {
+      // A rodada que cruza o fim do baralho vira o começo protegido do novo
+      // ciclo inteiro. Isso evita repetir qualquer item dela na rodada seguinte.
+      saveDuelQuestionCycle({ cycleIds: selectedIds, recentIds: selectedIds });
+    } else {
+      const nextCycle = [...cycleIds];
+      const known = new Set(nextCycle);
+      selectedIds.forEach((id) => {
+        if (known.has(id)) return;
+        known.add(id);
+        nextCycle.push(id);
+      });
+      saveDuelQuestionCycle({ cycleIds: nextCycle, recentIds: selectedIds });
+    }
+  }
+
+  return selected;
 }
 
 export function getConfiguredDuelQuestionCount(roomData) {
   const questions = Array.isArray(roomData?.questions) ? roomData.questions : [];
   const explicitCount = Number(roomData?.questionCount);
+  let configuredCount = 0;
 
   if (
     roomData?.roundConfigured !== false &&
     isValidDuelQuestionCount(explicitCount) &&
     questions.length === explicitCount
   ) {
-    return explicitCount;
-  }
-
-  // Salas anteriores à v1.7 não tinham configuração explícita e sempre
-  // carregavam 16 perguntas. Elas continuam válidas durante a transição.
-  if (
+    configuredCount = explicitCount;
+  } else if (
     roomData?.roundConfigured === undefined &&
     roomData?.questionCount === undefined &&
     questions.length === 16
   ) {
-    return 16;
+    // Salas anteriores à v1.7 não tinham configuração explícita e sempre
+    // carregavam 16 perguntas. Elas continuam válidas durante a transição.
+    configuredCount = 16;
   }
 
-  return 0;
+  // Cada navegador registra a rodada quando ela realmente começou. Com isso,
+  // tanto quem criou quanto quem entrou na sala leva seu próprio histórico para
+  // futuros duelos, inclusive se trocar de papel e virar o próximo host.
+  if (configuredCount && (roomData?.status === "playing" || roomData?.status === "finished")) {
+    rememberPlayedDuelRound(questions);
+  }
+
+  return configuredCount;
 }
 
 export function isDuelRoundConfigured(roomData) {
