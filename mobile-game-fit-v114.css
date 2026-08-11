@@ -64,7 +64,7 @@
 
   #screen-game.active .question-card h2 {
     margin: 10px auto 11px;
-    font-size: clamp(1.38rem, 6.5vw, 1.7rem);
+    font-size: clamp(1.28rem, 6vw, 1.58rem);
     line-height: 1.1;
   }
 
@@ -212,7 +212,7 @@
 
   #screen-game.active .question-card h2 {
     margin-block: 8px 9px;
-    font-size: clamp(1.28rem, 5.9vw, 1.55rem);
+    font-size: clamp(1.18rem, 5.45vw, 1.45rem);
   }
 
   #screen-game.active .question-image-wrap img {
