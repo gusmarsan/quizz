@@ -117,7 +117,7 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       } catch {
-        return (await caches.match("./index.html")) || (await caches.match("./"));
+        return (await caches.match("./index.html")) || (await caches.match("./")) || Response.error();
       }
     })());
     return;
@@ -135,7 +135,7 @@ self.addEventListener("fetch", (event) => {
       }
       return response;
     } catch {
-      return cachedReleaseFallback(request);
+      return (await cachedReleaseFallback(request)) || Response.error();
     }
   })());
 });
