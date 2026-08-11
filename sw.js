@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "burrquizzz-pwa-";
-const CACHE_NAME = `${CACHE_PREFIX}v1.2-5`;
+const CACHE_NAME = `${CACHE_PREFIX}v1.2-6`;
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -12,8 +12,8 @@ const APP_SHELL = [
   "./game-responsive-v07.css?v=1.0",
   "./solo-feedback-v074.css?v=1.0",
   "./mobile-viewport-lock-v081.css?v=1.2",
-  "./mobile-game-fit-v114.css?v=1.2-fit2",
-  "./mobile-game-fit-v114.js?v=1.2-fit2",
+  "./mobile-game-fit-v114.css?v=1.2-fit3",
+  "./mobile-game-fit-v114.js?v=1.2-fit3",
   "./countdown-v12.css?v=1.2",
   "./home-preview-2.css?v=1.0",
   "./setup-screens-approved.css?v=1.0",
