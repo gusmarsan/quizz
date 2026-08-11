@@ -1,11 +1,10 @@
 const CACHE_PREFIX = "burrquizzz-pwa-";
-const CACHE_NAME = `${CACHE_PREFIX}v1.14-1`;
+const CACHE_NAME = `${CACHE_PREFIX}v1.14-2`;
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./manifest.webmanifest?v=1.12",
   "./manifest.webmanifest?v=1.14",
-  "./pwa-runtime.js?v=1.0",
+  "./pwa-runtime.js?v=1.14",
   "./brand-v11.css?v=1.14",
   "./styles.css?v=1.0",
   "./visual-polish.css?v=1.0",
@@ -16,7 +15,7 @@ const APP_SHELL = [
   "./home-preview-2.css?v=1.0",
   "./setup-screens-approved.css?v=1.0",
   "./production-v1.css?v=1.0",
-  "./button-typography-v112.css?v=1.12",
+  "./button-typography-v112.css?v=1.14",
   "./pull-refresh-v113.css?v=1.14",
   "./avatar-profile-v114.css?v=1.14",
   "./avatar-profile-v114.js?v=1.14",
