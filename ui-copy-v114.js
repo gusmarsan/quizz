@@ -60,24 +60,28 @@ if (homeScreen && homeTagline) {
   homeObserver.observe(homeScreen, { attributes: true, attributeFilter: ["class"] });
 }
 
-/* Home background: raise the pub crowd so the heads visually meet the space
-   below the tagline instead of sitting too close to the action buttons. */
+/* Home background: move the actual illustration layer upward. Using transform
+   makes the change visible regardless of how background-size: cover crops the
+   source image. The scale keeps the lower edge covered after the translation. */
 const homeCompositionStyle = document.createElement("style");
-homeCompositionStyle.dataset.burrHomeComposition = "raised-crowd";
+homeCompositionStyle.dataset.burrHomeComposition = "raised-crowd-v2";
 homeCompositionStyle.textContent = `
   #screen-home .real-home__background {
-    background-position: center 70% !important;
+    background-position: center 64% !important;
+    transform: translate3d(0, -36px, 0) scale(1.10) !important;
+    transform-origin: center center !important;
   }
 
   @media (max-width: 680px) {
     #screen-home .real-home__background {
-      background-position: 54% 76% !important;
+      background-position: 54% 60% !important;
+      transform: translate3d(0, -52px, 0) scale(1.14) !important;
     }
   }
 
   @media (max-width: 680px) and (max-height: 760px) {
     #screen-home .real-home__background {
-      background-position: 54% 79% !important;
+      transform: translate3d(0, -46px, 0) scale(1.14) !important;
     }
   }
 `;
