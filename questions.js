@@ -1,10 +1,6 @@
-// Burrquizzz v2.5.1 — 1.090 perguntas ativas, incluindo 100 perguntas visuais verificadas e locais.
-// Diretriz editorial: manter e expandir estes temas em futuras renovações.
-// Temas-base: curiosidades inúteis, internet nostálgica, TV e nostalgia, TV brasileira,
-// cinema, séries, animação, música brasileira, pop internacional, rock e metal, games,
-// objetos/tecnologia nostálgicos, ciência, história e geografia.
-// Novos eixos: HQs, literatura clássica, Recordes Guinness, recordes absurdos,
-// campeões/recordistas, arte, objetos esquecidos, celebridades e lugares pelo mundo.
+// Burrquizzz v1.81 — banco curado e expandido.
+// Mantém os 1.000 itens-base e 100 visuais como fonte, adiciona 70 perguntas
+// editoriais e aplica a curadoria pedida antes de expor o banco ao jogo.
 
 import batch01 from "./question-bank/batch-01.js?v=2.4.0";
 import batch02 from "./question-bank/batch-02.js?v=2.4.0";
@@ -28,6 +24,7 @@ import batch18a from "./question-bank/batch-18a.js?v=2.4.0";
 import batch18b from "./question-bank/batch-18b.js?v=2.4.0";
 import batch19 from "./question-bank/batch-19.js?v=2.4.0";
 import batch20 from "./question-bank/batch-20.js?v=2.4.0";
+import v181Questions from "./question-bank/batch-v181.js?v=1.81";
 import visualQuestions from "./question-bank/visual-batch.js?v=2.5.1";
 
 const BASE_QUESTIONS = [
@@ -55,14 +52,83 @@ const BASE_QUESTIONS = [
   ...batch20
 ];
 
+const stripAccents = (value) => String(value || "")
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase();
+
+function isComicQuestion(question) {
+  const category = stripAccents(question?.category);
+  return category.includes("hq") || category.includes("quadrinh");
+}
+
+function isCuriousComicQuestion(question) {
+  if (!isComicQuestion(question)) return true;
+  if (String(question?.id || "").startsWith("v181-")) return true;
+
+  const prompt = stripAccents(question?.prompt);
+  return /poder|habilidade|fraqueza|estranh|inusitad|bizar|absurd|curios|improvavel|ridicul|peculiar/.test(prompt);
+}
+
+function isGenericGameQuestion(question) {
+  const category = stripAccents(question?.category);
+  if (!category.includes("game") && !category.includes("videogame")) return true;
+
+  const prompt = stripAccents(question?.prompt);
+  return !/estudio|desenvolved|publisher|publicador|publicadora|empresa que criou|empresa responsavel|produzido por|produzida por/.test(prompt);
+}
+
+function capitalizeAnswerItem(value) {
+  if (typeof value !== "string" || !value) return value;
+  return value.replace(/^(\s*)(\p{Ll})/u, (_, spaces, letter) => (
+    `${spaces}${letter.toLocaleUpperCase("pt-BR")}`
+  ));
+}
+
+function normalizeAnswerCapitalization(question) {
+  const normalized = { ...question };
+
+  if (Array.isArray(question?.options)) {
+    normalized.options = question.options.map(capitalizeAnswerItem);
+  }
+
+  if (Array.isArray(question?.rightItems)) {
+    normalized.rightItems = question.rightItems.map(capitalizeAnswerItem);
+  }
+
+  // Em match_columns, matches precisa continuar idêntico a rightItems.
+  if (Array.isArray(question?.matches)) {
+    normalized.matches = question.matches.map(capitalizeAnswerItem);
+  }
+
+  return normalized;
+}
+
+function applyEditorialPolicy(question) {
+  return isCuriousComicQuestion(question) && isGenericGameQuestion(question);
+}
+
 // As 10 perguntas visuais antigas usavam SVGs provisórios e foram substituídas pelo novo acervo.
 const BASE_WITHOUT_LEGACY_IMAGES = BASE_QUESTIONS.filter(
   (question) => question.type !== "image_choice"
 );
 
+const CURATED_BASE = BASE_WITHOUT_LEGACY_IMAGES
+  .filter(applyEditorialPolicy)
+  .map(normalizeAnswerCapitalization);
+
+const CURATED_V181 = v181Questions
+  .filter(applyEditorialPolicy)
+  .map(normalizeAnswerCapitalization);
+
+const CURATED_VISUALS = visualQuestions
+  .filter(applyEditorialPolicy)
+  .map(normalizeAnswerCapitalization);
+
 export const QUESTIONS = [
-  ...BASE_WITHOUT_LEGACY_IMAGES,
-  ...visualQuestions
+  ...CURATED_BASE,
+  ...CURATED_V181,
+  ...CURATED_VISUALS
 ];
 
 if (BASE_QUESTIONS.length !== 1000) {
@@ -73,6 +139,40 @@ if (visualQuestions.length !== 100) {
   throw new Error(`Banco visual incompleto: ${visualQuestions.length}/100.`);
 }
 
-if (QUESTIONS.length !== 1090) {
-  throw new Error(`Banco ativo incompleto: ${QUESTIONS.length}/1090.`);
+if (v181Questions.length !== 70) {
+  throw new Error(`Lote v1.81 incompleto: ${v181Questions.length}/70.`);
+}
+
+const v181CategoryCounts = CURATED_V181.reduce((counts, question) => {
+  counts[question.category] = (counts[question.category] || 0) + 1;
+  return counts;
+}, {});
+
+[
+  "Cinema B e trash",
+  "Cinema cult",
+  "Rock e synth pop dos anos 80",
+  "Escolinha do Professor Raimundo",
+  "Viva o Gordo",
+  "Fórmulas do cotidiano",
+  "HQs e curiosidades"
+].forEach((category) => {
+  if (v181CategoryCounts[category] !== 10) {
+    throw new Error(`Lote v1.81 incompleto em ${category}: ${v181CategoryCounts[category] || 0}/10.`);
+  }
+});
+
+const ids = QUESTIONS.map((question) => String(question?.id || ""));
+if (new Set(ids).size !== ids.length) {
+  throw new Error("O banco ativo contém IDs de perguntas duplicados.");
+}
+
+const displayedAnswerLists = QUESTIONS.flatMap((question) => [
+  ...(Array.isArray(question.options) ? question.options : []),
+  ...(Array.isArray(question.rightItems) ? question.rightItems : [])
+]);
+
+const lowerCaseAnswer = displayedAnswerLists.find((answer) => /^(\s*)\p{Ll}/u.test(String(answer)));
+if (lowerCaseAnswer) {
+  throw new Error(`Item de resposta começa com caixa-baixa: ${lowerCaseAnswer}`);
 }
