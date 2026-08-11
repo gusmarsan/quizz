@@ -1,0 +1,229 @@
+/* Burrquizzz v1.14 — mobile viewport fit
+   Short questions should fit naturally; long/image/match questions scroll
+   inside the active game screen instead of being clipped by the app shell. */
+
+@media (max-width: 680px) {
+  /* production-v1.css intentionally frames the game, but its fixed minimum
+     height + hidden overflow clips content on real phone viewports. */
+  #screen-game.active,
+  #screen-results.active {
+    min-height: 0;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  #screen-game.active::-webkit-scrollbar,
+  #screen-results.active::-webkit-scrollbar {
+    display: none;
+  }
+
+  #screen-game.active {
+    padding: 10px 10px max(20px, env(safe-area-inset-bottom));
+  }
+
+  /* Remove the legacy 540px floor. The card now grows only as much as the
+     current question needs. */
+  #screen-game.active .question-card {
+    min-height: 0;
+    padding: 18px 14px 16px;
+  }
+
+  #screen-game.active .game-header {
+    margin-bottom: 8px;
+  }
+
+  #screen-game.active .score-chip,
+  #screen-game.active .opponent-badge {
+    min-height: 48px;
+    padding: 6px 9px;
+  }
+
+  #screen-game.active .timer-track {
+    height: 7px;
+    margin-bottom: 10px;
+  }
+
+  #screen-game.active .question-meta {
+    gap: 6px;
+  }
+
+  #screen-game.active .category-chip,
+  #screen-game.active .type-chip {
+    padding: 6px 8px;
+    font-size: .63rem;
+  }
+
+  #screen-game.active .question-card h2 {
+    margin: 10px auto 11px;
+    font-size: clamp(1.38rem, 6.5vw, 1.7rem);
+    line-height: 1.1;
+  }
+
+  #screen-game.active .question-support {
+    margin-bottom: 10px;
+    font-size: .88rem;
+    line-height: 1.35;
+  }
+
+  /* Images no longer consume almost half the usable screen on phones. */
+  #screen-game.active .question-image-wrap {
+    width: 100%;
+    margin: 0 auto 10px;
+    border-radius: 13px;
+  }
+
+  #screen-game.active .question-image-wrap img {
+    width: 100%;
+    max-height: min(27dvh, 205px);
+    aspect-ratio: auto;
+    object-fit: contain;
+    background: #06131a;
+  }
+
+  #screen-game.active .answers-stack {
+    gap: 6px;
+  }
+
+  #screen-game.active .answer-button {
+    min-height: 49px;
+    gap: 9px;
+    padding: 8px 10px;
+    font-size: .91rem;
+    line-height: 1.2;
+  }
+
+  #screen-game.active .answer-letter {
+    width: 31px;
+    height: 31px;
+    border-radius: 9px;
+  }
+
+  /* Association questions are naturally taller. Keep controls comfortable,
+     but remove excess vertical spacing and let the screen itself scroll. */
+  #screen-game.active .match-card,
+  #screen-game.active .input-card {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  #screen-game.active .match-card p,
+  #screen-game.active .input-card p {
+    margin: 8px 0 10px;
+  }
+
+  #screen-game.active .match-rows,
+  #screen-game.active .match-row {
+    gap: 7px;
+  }
+
+  #screen-game.active .match-left {
+    padding: 9px 11px;
+    border-radius: 11px;
+  }
+
+  #screen-game.active .match-row select {
+    height: 45px;
+    border-radius: 11px;
+  }
+
+  #screen-game.active .submit-row {
+    margin-top: 10px;
+    padding-bottom: 4px;
+  }
+
+  #screen-game.active .feedback-banner {
+    min-height: 36px;
+    margin-top: 7px;
+  }
+
+  /* Results may include rare-question badges and variable copy. Keep the
+     composition compact, with scrolling as a safety net instead of clipping. */
+  #screen-results.active {
+    display: block;
+    padding: 6px 10px max(20px, env(safe-area-inset-bottom));
+  }
+
+  #screen-results.active .results-panel {
+    width: 100%;
+    margin: 0 auto;
+    padding: 2px 16px 14px;
+    overflow: visible;
+  }
+
+  #screen-results.active .result-v1-crest {
+    width: min(100%, 250px);
+    margin: -8px auto -8px;
+  }
+
+  #screen-results.active #duelScoreboard:not(.hidden),
+  #screen-results.active #soloStats:not(.hidden) {
+    margin: 8px auto 7px;
+    padding: 11px 10px 9px;
+  }
+
+  #screen-results.active #soloStats strong {
+    font-size: 1.75rem;
+  }
+
+  #screen-results.active .result-v1-message {
+    width: min(100%, 300px);
+    margin: -10px auto 8px;
+  }
+
+  #screen-results.active .result-v1-actions {
+    gap: 7px;
+    padding-bottom: 2px;
+  }
+
+  #screen-results.active .primary-button {
+    min-height: 52px;
+  }
+
+  #screen-results.active .ghost-button {
+    min-height: 44px;
+  }
+}
+
+/* Extra compression for short-height phone viewports. */
+@media (max-width: 680px) and (max-height: 760px) {
+  #screen-game.active {
+    padding-top: 7px;
+  }
+
+  #screen-game.active .score-chip,
+  #screen-game.active .opponent-badge {
+    min-height: 44px;
+  }
+
+  #screen-game.active .question-card {
+    padding-block: 14px;
+  }
+
+  #screen-game.active .question-card h2 {
+    margin-block: 8px 9px;
+    font-size: clamp(1.28rem, 5.9vw, 1.55rem);
+  }
+
+  #screen-game.active .question-image-wrap img {
+    max-height: min(23dvh, 170px);
+  }
+
+  #screen-game.active .answer-button {
+    min-height: 46px;
+    padding-block: 7px;
+  }
+
+  #screen-results.active .result-v1-crest {
+    width: min(100%, 225px);
+  }
+
+  #screen-results.active .result-v1-message {
+    width: min(100%, 275px);
+  }
+}
