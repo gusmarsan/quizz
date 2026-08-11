@@ -1,6 +1,7 @@
 /* Burrquizzz — UI copy refinements + Home variations + v1.5 lobby */
 
 const RELEASE_VERSION = "1.5";
+const LOBBY_PLAYERS_REVISION = "1.5.1";
 
 /* v1.5: load the redesigned duel lobby after legacy styles so it wins the cascade. */
 if (!document.querySelector('link[data-burr-lobby-v15]')) {
@@ -9,6 +10,16 @@ if (!document.querySelector('link[data-burr-lobby-v15]')) {
   lobbyStyles.href = `./lobby-v15.css?v=${RELEASE_VERSION}`;
   lobbyStyles.dataset.burrLobbyV15 = "true";
   document.head.appendChild(lobbyStyles);
+}
+
+/* Refinement for the player list: one cohesive dark block, smaller status dots
+   and quieter waiting state. Loaded after lobby-v15.css on purpose. */
+if (!document.querySelector('link[data-burr-lobby-players-v15]')) {
+  const playerStyles = document.createElement("link");
+  playerStyles.rel = "stylesheet";
+  playerStyles.href = `./lobby-players-v15.css?v=${LOBBY_PLAYERS_REVISION}`;
+  playerStyles.dataset.burrLobbyPlayersV15 = "true";
+  document.head.appendChild(playerStyles);
 }
 
 function applyReleaseMetadata() {
