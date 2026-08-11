@@ -1,5 +1,5 @@
 const BURRQUIZZZ_VERSION = "1.2";
-const MOBILE_FIT_REVISION = "1.14-fit1";
+const MOBILE_FIT_REVISION = "1.2-fit2";
 const COUNTDOWN_STYLE_REVISION = "1.2";
 const PULL_REFRESH_THRESHOLD = 72;
 const PULL_REFRESH_MAX = 118;
@@ -251,7 +251,7 @@ if ("serviceWorker" in navigator) {
         watchServiceWorkerUpdates(registration);
         return registration.update();
       })
-      .catch((error) => console.warn("PWA: service worker não pôde ser registrado.", error));
+      .catch((error) => console.warn("PWA: service worker não pôôde ser registrado.", error));
   });
 
   document.addEventListener("visibilitychange", () => {
