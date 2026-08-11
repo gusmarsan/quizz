@@ -46,6 +46,7 @@ const APP_SHELL = [
   "./firebase-config.js",
   versioned("./duel-rematch-v06.js"),
   "./assets/home/burrquizzz-pub-background.png",
+  "./assets/game/game-background-infinite.png",
   "./assets/resultado/resultado-background.png",
   "./assets/resultado/resultado-laurels.png",
   "./assets/resultado/resultado-marquee-frame.png",
