@@ -96,3 +96,140 @@ dialog .primary-button {
   font-family: var(--burr-button-font) !important;
   font-weight: 500 !important;
 }
+
+/* v1.2 mobile layout guard -------------------------------------------------
+   Legacy setup/game styles contain ID-based overflow and minimum-height rules.
+   These stronger mobile overrides prevent content from being clipped at the
+   bottom of real phone viewports. */
+@media (max-width: 680px) {
+  #screen-solo-setup.active,
+  #screen-online-menu.active {
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: max(28px, env(safe-area-inset-bottom)) !important;
+  }
+
+  #screen-solo-setup.active::-webkit-scrollbar,
+  #screen-online-menu.active::-webkit-scrollbar,
+  #screen-game.active::-webkit-scrollbar {
+    display: none;
+  }
+
+  #screen-solo-setup .panel.compact,
+  #screen-online-menu .panel.compact {
+    margin-top: 6px !important;
+    padding: 22px 18px 20px !important;
+  }
+
+  #screen-solo-setup h2,
+  #screen-online-menu h2 {
+    margin-bottom: 20px !important;
+  }
+
+  #screen-solo-setup .field,
+  #screen-online-menu .field {
+    margin-bottom: 14px !important;
+  }
+
+  #screen-online-menu .online-actions {
+    gap: 12px !important;
+  }
+
+  #screen-solo-setup input,
+  #screen-online-menu input {
+    height: 52px !important;
+  }
+
+  #screen-solo-setup .primary-button,
+  #screen-online-menu .primary-button,
+  #screen-online-menu .secondary-button {
+    min-height: 52px !important;
+  }
+
+  #screen-game.active {
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
+  }
+
+  #screen-game.active .question-card {
+    min-height: 0 !important;
+  }
+
+  #screen-game.active .question-image-wrap {
+    margin-bottom: 9px !important;
+  }
+
+  #screen-game.active .question-image-wrap img {
+    width: 100% !important;
+    height: auto !important;
+    max-height: min(23dvh, 175px) !important;
+    aspect-ratio: auto !important;
+    object-fit: contain !important;
+    background: #06131a;
+  }
+
+  #screen-game.active .answers-stack {
+    gap: 6px !important;
+  }
+
+  #screen-game.active .answer-button {
+    min-height: 48px !important;
+    padding-block: 7px !important;
+  }
+}
+
+@media (max-width: 680px) and (max-height: 800px) {
+  #screen-solo-setup.active,
+  #screen-online-menu.active {
+    padding-top: 12px !important;
+  }
+
+  #screen-solo-setup .back-link,
+  #screen-online-menu .back-link {
+    min-height: 38px !important;
+  }
+
+  #screen-solo-setup .panel.compact,
+  #screen-online-menu .panel.compact {
+    padding: 18px 16px 18px !important;
+  }
+
+  #screen-solo-setup h2,
+  #screen-online-menu h2 {
+    margin-bottom: 16px !important;
+    font-size: clamp(2rem, 9.5vw, 2.55rem) !important;
+  }
+
+  #screen-solo-setup .field,
+  #screen-online-menu .field {
+    margin-bottom: 12px !important;
+  }
+
+  #screen-online-menu .online-actions {
+    gap: 10px !important;
+  }
+
+  #screen-solo-setup input,
+  #screen-online-menu input,
+  #screen-solo-setup .primary-button,
+  #screen-online-menu .primary-button,
+  #screen-online-menu .secondary-button {
+    height: 50px !important;
+    min-height: 50px !important;
+  }
+
+  #screen-game.active .question-image-wrap img {
+    max-height: min(21dvh, 155px) !important;
+  }
+}
