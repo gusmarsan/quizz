@@ -4,66 +4,90 @@
   --burr-button-secondary-size: .86rem;
 }
 
-/* Global button type system.
-   The Home CTAs are the reference: DM Sans, weight 800, compact line-height
-   and the same tracking. The Burrquizzz brand keeps its own display style. */
+/* Burrquizzz button typography system.
+   Home CTAs are the source of truth. Screen-specific selectors below are
+   intentionally stronger than legacy rules in setup/results stylesheets. */
 button:not(.brand) {
-  font-family: var(--burr-button-font);
-  font-style: normal;
-  font-weight: 800;
+  font-family: var(--burr-button-font) !important;
+  font-style: normal !important;
   font-optical-sizing: auto;
 }
 
 button:not(.brand) * {
-  font-family: inherit;
+  font-family: inherit !important;
 }
 
-/* Primary actions mirror the opening-screen "Começar partida" label. */
+/* PRIMARY ACTIONS = Home "Começar partida" */
 .primary-button,
+#screen-solo-setup .primary-button,
+#screen-online-menu .primary-button,
+#screen-lobby .primary-button,
+#screen-game .primary-button,
+#screen-results .primary-button,
+dialog .primary-button,
 .real-home__cta strong {
-  font-family: var(--burr-button-font);
-  font-size: var(--burr-button-primary-size);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: .02em;
+  font-family: var(--burr-button-font) !important;
+  font-size: var(--burr-button-primary-size) !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+  letter-spacing: .02em !important;
 }
 
-/* Secondary/navigation actions mirror the opening-screen "Duelo online" label. */
+#screen-solo-setup .primary-button,
+#screen-online-menu .primary-button,
+#screen-lobby .primary-button,
+#screen-game .primary-button,
+#screen-results .primary-button,
+dialog .primary-button {
+  text-transform: uppercase;
+}
+
+/* SECONDARY ACTIONS = Home "Duelo online" */
 .secondary-button,
+#screen-online-menu .secondary-button,
+#screen-results .ghost-button,
 .ghost-button:not(.small),
 .back-link,
 .real-home__online strong {
-  font-family: var(--burr-button-font);
-  font-size: var(--burr-button-secondary-size);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: .02em;
+  font-family: var(--burr-button-font) !important;
+  font-size: var(--burr-button-secondary-size) !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+  letter-spacing: .02em !important;
 }
 
-/* Small utility controls stay compact, but use the same face and weight. */
+.secondary-button,
+#screen-online-menu .secondary-button {
+  text-transform: uppercase;
+}
+
+/* Small utility controls stay compact but use the same face. */
 .ghost-button.small,
-.dialog-close {
-  font-family: var(--burr-button-font);
-  font-weight: 800;
+.dialog-close,
+.profile-photo-link {
+  font-family: var(--burr-button-font) !important;
+  font-weight: 800 !important;
 }
 
-/* Answer choices keep natural sentence casing while sharing the same typeface. */
-.answer-button {
-  font-family: var(--burr-button-font);
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: .01em;
+/* Answer choices keep sentence casing while sharing the same typography. */
+.answer-button,
+#screen-game .answer-button {
+  font-family: var(--burr-button-font) !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  letter-spacing: .01em !important;
 }
 
 /* Segmented choices behave visually like buttons. */
-.segmented span {
-  font-family: var(--burr-button-font);
-  font-weight: 800;
+.segmented span,
+#screen-solo-setup .segmented span {
+  font-family: var(--burr-button-font) !important;
+  font-weight: 800 !important;
 }
 
 /* Home supporting copy remains intentionally lighter. */
 .real-home__cta small,
 .real-home__online small {
-  font-family: var(--burr-button-font);
-  font-weight: 500;
+  font-family: var(--burr-button-font) !important;
+  font-weight: 500 !important;
 }
