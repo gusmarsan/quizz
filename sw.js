@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "burrquizzz-pwa-";
-const CACHE_REVISION = "duel-flow-18";
+const CACHE_REVISION = "question-bank-181";
 const RELEASE_VERSION = (() => {
   try {
     return new URL(self.location.href).searchParams.get("v") || "current";
@@ -46,6 +46,7 @@ const APP_SHELL = [
   versioned("./metrics-runtime-v09.js"),
   versioned("./questions.js"),
   versioned("./duel-question-bank-v252.js"),
+  versioned("./question-bank/batch-v181.js"),
   "./firebase-config.js",
   versioned("./duel-rematch-v06.js"),
   "./assets/home/burrquizzz-pub-background.png",
