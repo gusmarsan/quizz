@@ -1,187 +1,307 @@
-.results-panel.duel-results-v061 {
-  max-width: 760px;
+#screen-results .results-panel.result-identity-v16 {
+  max-width: 680px;
 }
 
-.results-panel.duel-results-v061 #resultTitle {
-  margin-bottom: 10px;
-}
-
-.results-panel.duel-results-v061 .result-subtitle {
-  max-width: 560px;
-  margin-inline: auto;
-  margin-bottom: 0;
-}
-
-#duelScoreboard:not(.hidden) {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(48px, 8vw, 74px) minmax(0, 1fr);
-  gap: 12px;
-  margin: 30px 0 26px;
-  padding: 54px 18px 18px;
-  overflow: hidden;
-  border-radius: 22px;
+#screen-results .result-identity-card,
+#screen-results #duelScoreboard:not(.hidden) {
+  width: min(100%, 600px);
+  margin: 14px auto 10px;
+  border: 1px solid rgba(241, 196, 92, .46);
+  border-radius: 15px;
   background:
-    radial-gradient(circle at 18% 10%, rgba(255, 211, 58, 0.16), transparent 32%),
-    radial-gradient(circle at 88% 86%, rgba(242, 73, 125, 0.15), transparent 34%),
-    linear-gradient(145deg, #0a2b61, #123f82 62%, #1953a0);
-  box-shadow: 0 20px 42px rgba(4, 31, 86, 0.26);
+    radial-gradient(circle at 50% 0, rgba(241, 196, 92, .08), transparent 48%),
+    linear-gradient(145deg, rgba(16, 42, 51, .98), rgba(5, 18, 25, .995));
+  box-shadow: 0 14px 30px rgba(0, 0, 0, .32);
 }
 
-#duelScoreboard:not(.hidden)::before {
-  content: "PLACAR FINAL";
-  position: absolute;
-  top: 16px;
-  left: 50%;
-  color: rgba(255, 255, 255, 0.76);
-  font-family: var(--title-font);
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  transform: translateX(-50%);
+#screen-results .result-player-avatar {
+  display: grid;
+  width: clamp(56px, 8vw, 64px);
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  color: var(--v1-cream);
+  border: 1px solid rgba(241, 196, 92, .72);
+  border-radius: 50%;
+  background-color: #0b2028;
+  background-position: center;
+  background-size: cover;
+  font: 900 1.05rem/1 var(--v1-ui);
+  letter-spacing: .035em;
+  box-shadow: 0 7px 18px rgba(0, 0, 0, .28);
 }
 
-#duelScoreboard:not(.hidden)::after {
-  content: "×";
-  position: absolute;
-  left: 50%;
-  top: 56%;
-  color: var(--primary);
-  font-family: var(--title-font);
-  font-size: clamp(2.2rem, 7vw, 3.4rem);
-  font-weight: 900;
-  line-height: 1;
-  transform: translate(-50%, -50%);
-  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.16);
+#screen-results .result-player-avatar.has-photo {
+  color: transparent;
+  text-shadow: none;
 }
 
-#duelScoreboard #scorePlayerOne {
-  grid-column: 1;
-}
-
-#duelScoreboard #scorePlayerTwo {
-  grid-column: 3;
-}
-
-#duelScoreboard .score-row {
-  display: flex;
-  min-width: 0;
-  min-height: 224px;
-  flex-direction: column;
+#screen-results #soloStats.result-identity-card--solo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 20px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 17px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  text-align: center;
+  gap: 8px 14px;
+  min-height: 92px;
+  padding: 13px 18px;
+  text-align: left;
+}
+
+#screen-results .result-solo-player {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+}
+
+#screen-results #soloStats > div {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 
-#duelScoreboard .score-row.winner {
-  border-color: rgba(255, 211, 58, 0.72);
-  background: linear-gradient(180deg, rgba(255, 211, 58, 0.21), rgba(255, 255, 255, 0.09));
-  box-shadow: inset 0 0 0 1px rgba(255, 211, 58, 0.16), 0 10px 24px rgba(0, 0, 0, 0.14);
-  transform: translateY(-4px);
-}
-
-#duelScoreboard .duel-player-status {
-  min-height: 20px;
-  color: #c9d9f4;
-  font-family: var(--title-font);
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-#duelScoreboard .score-row.winner .duel-player-status {
-  color: var(--primary);
-}
-
-#duelScoreboard .duel-player-name {
+#screen-results #soloStats .result-player-name,
+#screen-results #duelScoreboard .duel-player-name {
+  display: block;
   width: 100%;
+  min-width: 0;
   overflow: hidden;
-  color: #fff;
-  font-family: var(--title-font);
-  font-size: clamp(1rem, 3.5vw, 1.35rem);
-  font-weight: 900;
-  line-height: 1.1;
+  color: var(--v1-cream);
+  font: 800 clamp(.92rem, 2.2vw, 1.08rem)/1.12 var(--v1-ui);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-#duelScoreboard .duel-score-number {
-  margin-top: 10px;
-  color: #fff;
-  font-family: var(--title-font);
-  font-size: clamp(3.2rem, 11vw, 5rem);
-  font-weight: 900;
-  line-height: 0.9;
-  letter-spacing: -0.06em;
+#screen-results .result-solo-time {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--v1-muted);
+  white-space: nowrap;
 }
 
-#duelScoreboard .score-row.winner .duel-score-number {
-  color: var(--primary);
+#screen-results #soloStats .result-solo-time strong {
+  color: var(--v1-cream);
+  font: 800 .88rem/1 var(--v1-ui);
+  font-variant-numeric: tabular-nums;
 }
 
-#duelScoreboard .duel-score-total {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.42em;
-  letter-spacing: -0.02em;
+#screen-results #soloStats .result-solo-time small {
+  color: var(--v1-muted);
+  font: 650 .72rem/1 var(--v1-ui);
 }
 
-#duelScoreboard .duel-score-label {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.76rem;
-  font-weight: 800;
+#screen-results .result-solo-score {
+  display: grid;
+  min-width: 74px;
+  justify-items: end;
+  gap: 3px;
+  text-align: right;
 }
 
-#duelScoreboard .duel-score-time {
-  margin-top: 10px;
-  padding-top: 9px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  color: #d7e3f7;
-  font-size: 0.78rem;
+#screen-results #soloStats .result-solo-score strong {
+  color: var(--v1-gold-hi);
+  font: 900 clamp(2rem, 6vw, 2.7rem)/.92 var(--v1-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.035em;
 }
 
-.results-panel.duel-results-v061 #playAgainButton {
+#screen-results #soloStats .result-solo-score small {
+  color: var(--v1-muted);
+  font: 800 .66rem/1 var(--v1-ui);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+#screen-results #duelScoreboard:not(.hidden) {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(40px, 7vw, 58px) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 208px;
+  padding: 15px 18px;
+  overflow: hidden;
+}
+
+#screen-results #duelScoreboard:not(.hidden)::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 72px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(241, 196, 92, .12), transparent 68%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+#screen-results #duelScoreboard:not(.hidden)::after {
+  content: "VS";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  color: var(--v1-gold-hi);
+  font: 900 clamp(1.45rem, 4vw, 2rem)/1 var(--v1-display);
+  letter-spacing: -.025em;
+  text-shadow: 0 5px 14px rgba(226, 169, 59, .22);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+#screen-results #duelScoreboard #scorePlayerOne { grid-column: 1; }
+#screen-results #duelScoreboard #scorePlayerTwo { grid-column: 3; }
+
+#screen-results #duelScoreboard .score-row {
+  display: flex;
+  min-width: 0;
+  min-height: 176px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px;
+  color: var(--v1-cream);
+  border: 0;
+  background: transparent;
+  text-align: center;
+  box-shadow: none;
+  transform: none;
+}
+
+#screen-results #duelScoreboard .result-player-avatar {
+  margin-bottom: 4px;
+  border-color: rgba(215, 202, 178, .5);
+}
+
+#screen-results #duelScoreboard .score-row.winner .result-player-avatar {
+  border-color: var(--v1-gold-hi);
+  box-shadow: 0 7px 18px rgba(0, 0, 0, .28), 0 0 18px rgba(241, 196, 92, .18);
+}
+
+#screen-results #duelScoreboard.is-tie .result-player-avatar {
+  border-color: rgba(241, 196, 92, .72);
+}
+
+#screen-results #duelScoreboard .duel-player-name {
+  width: min(100%, 18ch);
+}
+
+#screen-results #duelScoreboard .duel-score-number {
+  color: var(--v1-cream);
+  font: 900 clamp(2rem, 6vw, 2.75rem)/.92 var(--v1-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.035em;
+}
+
+#screen-results #duelScoreboard .score-row.winner .duel-score-number,
+#screen-results #duelScoreboard.is-tie .duel-score-number {
+  color: var(--v1-gold-hi);
+}
+
+#screen-results #duelScoreboard .duel-score-total {
+  color: inherit;
+  font-size: .56em;
+  opacity: .82;
+}
+
+#screen-results #duelScoreboard .duel-score-label {
+  color: var(--v1-muted);
+  font: 800 .64rem/1 var(--v1-ui);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+#screen-results #duelScoreboard .duel-score-time {
+  margin-top: 3px;
+  color: var(--v1-muted);
+  font: 650 .66rem/1.15 var(--v1-ui);
+  white-space: nowrap;
+}
+
+#screen-results #duelScoreboard .duel-player-status {
+  min-height: 12px;
   margin-top: 2px;
+  color: rgba(215, 202, 178, .78);
+  font: 800 .59rem/1 var(--v1-ui);
+  letter-spacing: .065em;
+  text-transform: uppercase;
 }
 
-@media (max-width: 560px) {
-  .results-panel.duel-results-v061 {
-    padding-inline: 16px;
+#screen-results #duelScoreboard .score-row.winner .duel-player-status,
+#screen-results #duelScoreboard.is-tie .duel-player-status {
+  color: var(--v1-gold-hi);
+}
+
+@media (max-width: 600px) {
+  #screen-results #soloStats.result-identity-card--solo {
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    gap: 8px 11px;
+    min-height: 84px;
+    padding: 11px 12px;
   }
 
-  #duelScoreboard:not(.hidden) {
-    grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr);
-    gap: 6px;
-    padding: 50px 10px 12px;
-    border-radius: 18px;
+  #screen-results #soloStats .result-player-name,
+  #screen-results #duelScoreboard .duel-player-name {
+    font-size: .88rem;
   }
 
-  #duelScoreboard .score-row {
-    min-height: 196px;
-    padding: 16px 7px;
-    border-radius: 14px;
+  #screen-results .result-solo-score {
+    min-width: 66px;
   }
 
-  #duelScoreboard .duel-player-name {
-    font-size: 0.94rem;
+  #screen-results #soloStats .result-solo-score strong {
+    font-size: clamp(1.85rem, 8.5vw, 2.35rem);
   }
 
-  #duelScoreboard .duel-score-number {
-    font-size: clamp(2.65rem, 16vw, 4rem);
+  #screen-results #duelScoreboard:not(.hidden) {
+    grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr);
+    gap: 4px;
+    min-height: 188px;
+    padding: 12px 8px;
   }
 
-  #duelScoreboard:not(.hidden)::after {
-    font-size: 2rem;
+  #screen-results #duelScoreboard .score-row {
+    min-height: 164px;
+    padding-inline: 2px;
   }
 
-  #duelScoreboard .duel-score-time {
-    font-size: 0.7rem;
+  #screen-results #duelScoreboard .result-player-avatar {
+    width: 56px;
+  }
+
+  #screen-results #duelScoreboard .duel-player-name {
+    max-width: 14ch;
+  }
+
+  #screen-results #duelScoreboard .duel-score-number {
+    font-size: clamp(1.85rem, 10vw, 2.35rem);
+  }
+
+  #screen-results #duelScoreboard .duel-score-time {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: .6rem;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 370px) {
+  #screen-results #soloStats.result-identity-card--solo {
+    grid-template-columns: 54px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding-inline: 9px;
+  }
+
+  #screen-results #soloStats .result-solo-time small {
+    font-size: .66rem;
+  }
+
+  #screen-results #duelScoreboard:not(.hidden) {
+    grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr);
+    padding-inline: 6px;
   }
 }

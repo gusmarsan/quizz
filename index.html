@@ -10,29 +10,29 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Burrquizzz" />
   <title>Burrquizzz</title>
-  <script src="release-gate.js?v=1.56"></script>
-  <link rel="manifest" href="manifest.webmanifest?v=1.56" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=1.56" />
-  <link rel="icon" type="image/svg+xml" href="icons/burrquizzz-icon.svg?v=1.56" />
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=1.56" />
+  <script src="release-gate.js?v=1.6"></script>
+  <link rel="manifest" href="manifest.webmanifest?v=1.6" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=1.6" />
+  <link rel="icon" type="image/svg+xml" href="icons/burrquizzz-icon.svg?v=1.6" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=1.6" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&amp;family=Fraunces:opsz,wght@9..144,900&amp;display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=1.56" />
-  <link rel="stylesheet" href="visual-polish.css?v=1.56" />
-  <link rel="stylesheet" href="duel-results-v061.css?v=1.56" />
-  <link rel="stylesheet" href="game-responsive-v07.css?v=1.56" />
-  <link rel="stylesheet" href="solo-feedback-v074.css?v=1.56" />
-  <link rel="stylesheet" href="mobile-viewport-lock-v081.css?v=1.56" />
-  <link rel="stylesheet" href="home-preview-2.css?v=1.56" />
-  <link rel="stylesheet" href="setup-screens-approved.css?v=1.56" />
-  <link rel="stylesheet" href="production-v1.css?v=1.56" />
-  <link rel="stylesheet" href="button-typography-v112.css?v=1.56" />
+  <link rel="stylesheet" href="styles.css?v=1.6" />
+  <link rel="stylesheet" href="visual-polish.css?v=1.6" />
+  <link rel="stylesheet" href="game-responsive-v07.css?v=1.6" />
+  <link rel="stylesheet" href="solo-feedback-v074.css?v=1.6" />
+  <link rel="stylesheet" href="mobile-viewport-lock-v081.css?v=1.6" />
+  <link rel="stylesheet" href="home-preview-2.css?v=1.6" />
+  <link rel="stylesheet" href="setup-screens-approved.css?v=1.6" />
+  <link rel="stylesheet" href="production-v1.css?v=1.6" />
+  <link rel="stylesheet" href="duel-results-v061.css?v=1.6" />
+  <link rel="stylesheet" href="button-typography-v112.css?v=1.6" />
   <script type="importmap">
   {
     "imports": {
-      "./questions.js": "./questions.js?v=1.56",
-      "./duel-question-bank-v252.js": "./duel-question-bank-v252.js?v=1.56"
+      "./questions.js": "./questions.js?v=1.6",
+      "./duel-question-bank-v252.js": "./duel-question-bank-v252.js?v=1.6"
     }
   }
   </script>
@@ -121,7 +121,7 @@
       <div class="panel results-panel">
         <header class="result-v1-heading"><div class="result-v1-crest"><img src="assets/resultado/resultado-laurels.png" alt="" aria-hidden="true" /><div class="result-v1-winner"><p id="resultEyebrow" class="eyebrow">Resultado</p><h2 id="resultTitle">Fim de jogo</h2></div></div></header>
         <div id="duelScoreboard" class="scoreboard hidden"><div id="scorePlayerOne" class="score-row"></div><div id="scorePlayerTwo" class="score-row"></div></div>
-        <div id="soloStats" class="stats-grid"><div><small>Acertos</small><strong id="resultCorrect">0/0</strong></div><div><small>Tempo médio</small><strong id="resultAverage">0s</strong></div></div>
+        <div id="soloStats" class="stats-grid result-identity-card result-identity-card--solo"><span id="resultSoloAvatar" class="result-player-avatar" data-local-avatar aria-hidden="true">J</span><div class="result-solo-player"><strong id="resultSoloName" class="result-player-name">Jogador</strong><span class="result-solo-time"><strong id="resultAverage">0s</strong><small>tempo médio</small></span></div><div class="result-solo-score"><strong id="resultCorrect">0/0</strong><small>Acertos</small></div></div>
         <div class="result-v1-message"><img src="assets/resultado/resultado-marquee-frame.png" alt="" aria-hidden="true" /><div><p id="resultSubtitle" class="result-subtitle"></p></div></div>
         <div class="result-v1-actions"><button id="playAgainButton" class="primary-button" type="button">Jogar novamente</button><button id="resultsHomeButton" class="ghost-button" type="button">Voltar ao início</button></div>
       </div>
@@ -130,13 +130,13 @@
 
   <dialog id="firebaseDialog"><form method="dialog" class="dialog-card"><button class="dialog-close" value="cancel" aria-label="Fechar">×</button><p class="eyebrow">Duelo online</p><h2>Configurar Firebase</h2><p class="dialog-copy">Cole o objeto <code>firebaseConfig</code> do seu projeto. Ele fica salvo só neste navegador.</p><label class="field"><span>Configuração</span><textarea id="firebaseConfigInput" rows="10" spellcheck="false" placeholder='{"apiKey":"...","authDomain":"...","databaseURL":"...","projectId":"...","appId":"..."}'></textarea></label><p id="firebaseStatus" class="hint"></p><button id="saveFirebaseButton" class="primary-button" value="cancel" type="button">Salvar configuração</button><button id="clearFirebaseButton" class="ghost-button danger" value="cancel" type="button">Apagar configuração</button></form></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <div id="burrAppVersion" title="Burrquizzz versão 1.56" aria-label="Versão 1.56">v1.56</div>
-  <script type="module" src="ai-bootstrap.js?v=1.56"></script>
-  <script type="module" src="online-runtime-v231.js?v=1.56"></script>
-  <script type="module" src="duel-results-v061.js?v=1.56"></script>
-  <script type="module" src="app.js?v=1.56"></script>
-  <script type="module" src="ui-copy-v154.js?v=1.56"></script>
-  <script type="module" src="metrics-runtime-v09.js?v=1.56"></script>
-  <script type="module" src="pwa-runtime-v154.js?v=1.56"></script>
+  <div id="burrAppVersion" title="Burrquizzz versão 1.6" aria-label="Versão 1.6">v1.6</div>
+  <script type="module" src="ai-bootstrap.js?v=1.6"></script>
+  <script type="module" src="online-runtime-v231.js?v=1.6"></script>
+  <script type="module" src="duel-results-v061.js?v=1.6"></script>
+  <script type="module" src="app.js?v=1.6"></script>
+  <script type="module" src="ui-copy-v154.js?v=1.6"></script>
+  <script type="module" src="metrics-runtime-v09.js?v=1.6"></script>
+  <script type="module" src="pwa-runtime-v154.js?v=1.6"></script>
 </body>
 </html>

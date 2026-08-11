@@ -84,6 +84,7 @@ const elements = {
   resultEyebrow: $("#resultEyebrow"),
   resultTitle: $("#resultTitle"),
   resultSubtitle: $("#resultSubtitle"),
+  resultSoloName: $("#resultSoloName"),
   resultCorrect: $("#resultCorrect"),
   resultAverage: $("#resultAverage"),
   soloStats: $("#soloStats"),
@@ -544,6 +545,7 @@ function showSoloResults() {
   elements.resultEyebrow.textContent = "Resultado solo";
   elements.resultTitle.textContent = ratio >= .8 ? "Mandou muito bem" : ratio >= .5 ? "Boa rodada" : "Dá para melhorar";
   elements.resultSubtitle.textContent = `${state.playerName}, você sobreviveu a um mix de curiosidades inúteis, cultura pop e nostalgia.`;
+  elements.resultSoloName.textContent = state.playerName || "Jogador";
   elements.resultCorrect.textContent = `${state.score}/${state.questions.length}`;
   elements.resultAverage.textContent = formatTime(average);
   elements.soloStats.classList.remove("hidden");

@@ -165,16 +165,6 @@
     margin: -8px auto -8px;
   }
 
-  #screen-results.active #duelScoreboard:not(.hidden),
-  #screen-results.active #soloStats:not(.hidden) {
-    margin: 8px auto 7px;
-    padding: 11px 10px 9px;
-  }
-
-  #screen-results.active #soloStats strong {
-    font-size: 1.75rem;
-  }
-
   #screen-results.active .result-v1-message {
     width: min(100%, 300px);
     margin: -10px auto 8px;

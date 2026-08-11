@@ -177,6 +177,10 @@ function setAvatarPhoto(photo) {
     hasStoredPhoto = false;
     avatar.style.removeProperty("background-image");
     avatar.classList.remove("has-photo");
+    document.querySelectorAll("[data-local-avatar]").forEach((target) => {
+      target.style.removeProperty("background-image");
+      target.classList.remove("has-photo");
+    });
     updateDialogState();
     return;
   }
@@ -186,6 +190,10 @@ function setAvatarPhoto(photo) {
   hasStoredPhoto = true;
   avatar.style.backgroundImage = `url("${source.replace(/"/g, "%22")}")`;
   avatar.classList.add("has-photo");
+  document.querySelectorAll("[data-local-avatar]").forEach((target) => {
+    target.style.backgroundImage = `url("${source.replace(/"/g, "%22")}")`;
+    target.classList.add("has-photo");
+  });
   updateDialogState();
 }
 
