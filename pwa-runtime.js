@@ -1,4 +1,5 @@
 const BURRQUIZZZ_VERSION = "1.14";
+const MOBILE_FIT_REVISION = "1.14-fit1";
 const PULL_REFRESH_THRESHOLD = 72;
 const PULL_REFRESH_MAX = 118;
 const PULL_REFRESH_BLOCKED_SCREENS = new Set(["screen-game", "screen-countdown"]);
@@ -23,6 +24,11 @@ const avatarProfileStyles = document.createElement("link");
 avatarProfileStyles.rel = "stylesheet";
 avatarProfileStyles.href = `./avatar-profile-v114.css?v=${BURRQUIZZZ_VERSION}`;
 document.head.appendChild(avatarProfileStyles);
+
+const mobileGameFitStyles = document.createElement("link");
+mobileGameFitStyles.rel = "stylesheet";
+mobileGameFitStyles.href = `./mobile-game-fit-v114.css?v=${MOBILE_FIT_REVISION}`;
+document.head.appendChild(mobileGameFitStyles);
 
 const refreshReleaseMetadata = () => {
   const manifestLink = document.querySelector('link[rel="manifest"]');
@@ -56,6 +62,9 @@ const refreshReleaseMetadata = () => {
 
 const loadAvatarProfile = () => import(`./avatar-profile-v114.js?v=${BURRQUIZZZ_VERSION}`)
   .catch((error) => console.warn("Perfil: módulo de foto não pôde ser carregado.", error));
+
+const loadMobileGameFit = () => import(`./mobile-game-fit-v114.js?v=${MOBILE_FIT_REVISION}`)
+  .catch((error) => console.warn("Jogo: ajuste de viewport não pôde ser carregado.", error));
 
 const ensurePullRefreshIndicator = () => {
   let indicator = document.querySelector("#burrPullRefresh");
@@ -212,11 +221,13 @@ if (document.readyState === "loading") {
     refreshReleaseMetadata();
     setupPullToRefresh();
     loadAvatarProfile();
+    loadMobileGameFit();
   }, { once: true });
 } else {
   refreshReleaseMetadata();
   setupPullToRefresh();
   loadAvatarProfile();
+  loadMobileGameFit();
 }
 
 if ("serviceWorker" in navigator) {
