@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "burrquizzz-pwa-";
-const CACHE_REVISION = "duel-flow-17";
+const CACHE_REVISION = "duel-flow-18";
 const RELEASE_VERSION = (() => {
   try {
     return new URL(self.location.href).searchParams.get("v") || "current";
@@ -41,6 +41,7 @@ const APP_SHELL = [
   versioned("./online-runtime-v231.js"),
   versioned("./duel-results-v061.js"),
   versioned("./duel-round-rules-v17.js"),
+  "./duel-round-rules-v17.js?v=1.7",
   versioned("./ai-bootstrap.js"),
   versioned("./metrics-runtime-v09.js"),
   versioned("./questions.js"),
