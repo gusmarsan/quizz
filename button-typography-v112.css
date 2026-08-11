@@ -1,32 +1,67 @@
 :root {
   --burr-button-font: "DM Sans", "Trebuchet MS", "Segoe UI", sans-serif;
+  --burr-button-primary-size: clamp(.96rem, 4.4vw, 1.12rem);
+  --burr-button-secondary-size: .86rem;
 }
 
-/* v1.12 — one interface typeface for every interactive button.
-   The Burrquizzz brand button is intentionally excluded because it uses
-   the display/brand typography rather than the action-button typography. */
+/* Global button type system.
+   The Home CTAs are the reference: DM Sans, weight 800, compact line-height
+   and the same tracking. The Burrquizzz brand keeps its own display style. */
 button:not(.brand) {
   font-family: var(--burr-button-font);
+  font-style: normal;
   font-weight: 800;
+  font-optical-sizing: auto;
 }
 
 button:not(.brand) * {
   font-family: inherit;
 }
 
-/* Segmented choices behave visually like buttons, so keep them aligned too. */
+/* Primary actions mirror the opening-screen "Começar partida" label. */
+.primary-button,
+.real-home__cta strong {
+  font-family: var(--burr-button-font);
+  font-size: var(--burr-button-primary-size);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: .02em;
+}
+
+/* Secondary/navigation actions mirror the opening-screen "Duelo online" label. */
+.secondary-button,
+.ghost-button:not(.small),
+.back-link,
+.real-home__online strong {
+  font-family: var(--burr-button-font);
+  font-size: var(--burr-button-secondary-size);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: .02em;
+}
+
+/* Small utility controls stay compact, but use the same face and weight. */
+.ghost-button.small,
+.dialog-close {
+  font-family: var(--burr-button-font);
+  font-weight: 800;
+}
+
+/* Answer choices keep natural sentence casing while sharing the same typeface. */
+.answer-button {
+  font-family: var(--burr-button-font);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: .01em;
+}
+
+/* Segmented choices behave visually like buttons. */
 .segmented span {
   font-family: var(--burr-button-font);
   font-weight: 800;
 }
 
-/* Keep the two-line Home CTAs exactly on the reference hierarchy. */
-.real-home__cta strong,
-.real-home__online strong {
-  font-family: var(--burr-button-font);
-  font-weight: 800;
-}
-
+/* Home supporting copy remains intentionally lighter. */
 .real-home__cta small,
 .real-home__online small {
   font-family: var(--burr-button-font);
