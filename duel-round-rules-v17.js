@@ -123,9 +123,9 @@ export function buildDuelQuestionRound(
   let usedIds = new Set(cycleIds);
   let fresh = available.filter((question) => !usedIds.has(duelQuestionIdentity(question)));
 
-  // Se o baralho já acabou, começa um novo ciclo preservando apenas a rodada
-  // mais recente como bloqueio. Assim a primeira rodada do novo ciclo também
-  // não repete imediatamente o que acabou de aparecer.
+  // Quando todo o banco já passou, inicia um novo ciclo mantendo a rodada mais
+  // recente bloqueada. Assim o ciclo recomeça sem repetir imediatamente o que
+  // acabou de aparecer.
   if (fresh.length === 0 && usedIds.size) {
     cycleIds = [...recentIds];
     usedIds = new Set(cycleIds);
@@ -163,7 +163,7 @@ export function buildDuelQuestionRound(
   const rawSelected = [...freshSelected, ...fallbackSelected];
   if (rawSelected.length !== questionCount) return [];
 
-  const selected = rawSelected.map((question, index) => ({
+  return rawSelected.map((question, index) => ({
     id: String(question.id || `${idPrefix}-${Date.now()}-${index}`),
     type: question.type === "image_choice" ? "image_choice" : "multiple_choice",
     category: String(question.category || "Burrquizzz"),
@@ -176,28 +176,6 @@ export function buildDuelQuestionRound(
     imageCredit: String(question.imageCredit || ""),
     supportText: String(question.supportText || "")
   }));
-
-  if (canUseLocalStorage()) {
-    const selectedIds = selected.map(duelQuestionIdentity);
-    const crossedCycleBoundary = freshSelected.length < questionCount;
-
-    if (crossedCycleBoundary) {
-      // A rodada que cruza o fim do baralho vira o começo protegido do novo
-      // ciclo inteiro. Isso evita repetir qualquer item dela na rodada seguinte.
-      saveDuelQuestionCycle({ cycleIds: selectedIds, recentIds: selectedIds });
-    } else {
-      const nextCycle = [...cycleIds];
-      const known = new Set(nextCycle);
-      selectedIds.forEach((id) => {
-        if (known.has(id)) return;
-        known.add(id);
-        nextCycle.push(id);
-      });
-      saveDuelQuestionCycle({ cycleIds: nextCycle, recentIds: selectedIds });
-    }
-  }
-
-  return selected;
 }
 
 export function getConfiguredDuelQuestionCount(roomData) {
@@ -221,9 +199,9 @@ export function getConfiguredDuelQuestionCount(roomData) {
     configuredCount = 16;
   }
 
-  // Cada navegador registra a rodada quando ela realmente começou. Com isso,
-  // tanto quem criou quanto quem entrou na sala leva seu próprio histórico para
-  // futuros duelos, inclusive se trocar de papel e virar o próximo host.
+  // Cada navegador registra a rodada somente depois que ela realmente começou.
+  // Assim host e convidado levam o próprio histórico para futuros duelos, mesmo
+  // quando trocam de papel, sem consumir perguntas de salas canceladas.
   if (configuredCount && (roomData?.status === "playing" || roomData?.status === "finished")) {
     rememberPlayedDuelRound(questions);
   }
