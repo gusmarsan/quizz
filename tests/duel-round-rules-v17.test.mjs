@@ -12,6 +12,37 @@ const questions = (count) => Array.from({ length: count }, (_, index) => ({ id: 
 const answer = (correct, elapsedMs) => ({ correct, elapsedMs });
 const answers = (entries) => Object.fromEntries(entries.map((entry, index) => [index, entry]));
 
+function questionBank(count) {
+  return Array.from({ length: count }, (_, index) => ({
+    id: `bank-${index}`,
+    type: "multiple_choice",
+    prompt: `Pergunta ${index}`,
+    options: ["A", "B", "C", "D"],
+    correctIndex: 0
+  }));
+}
+
+function withMemoryLocalStorage(run) {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  const values = new Map();
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem(key) { return values.has(key) ? values.get(key) : null; },
+      setItem(key, value) { values.set(key, String(value)); },
+      removeItem(key) { values.delete(key); },
+      clear() { values.clear(); }
+    }
+  });
+
+  try {
+    return run();
+  } finally {
+    if (original) Object.defineProperty(globalThis, "localStorage", original);
+    else delete globalThis.localStorage;
+  }
+}
+
 function room(count, firstAnswers, secondAnswers, extra = {}) {
   return {
     questionCount: count,
@@ -51,19 +82,51 @@ test("só inicia quando jogador 2 e configuração válida coexistem", () => {
 });
 
 test("monta exatamente 4 ou 16 perguntas e prioriza as ainda não usadas", () => {
-  const bank = Array.from({ length: 20 }, (_, index) => ({
-    id: `bank-${index}`,
-    type: "multiple_choice",
-    prompt: `Pergunta ${index}`,
-    options: ["A", "B", "C", "D"],
-    correctIndex: 0
-  }));
+  const bank = questionBank(20);
 
   const quick = buildDuelQuestionRound(bank, 4, [], () => .5, "test");
   const normal = buildDuelQuestionRound(bank, 16, quick, () => .5, "test");
   assert.equal(quick.length, 4);
   assert.equal(normal.length, 16);
   assert.equal(normal.some((question) => quick.some((used) => used.id === question.id)), false);
+});
+
+test("v1.8 percorre o baralho inteiro antes de iniciar um novo ciclo", () => {
+  withMemoryLocalStorage(() => {
+    const bank = questionBank(40);
+    const rounds = [
+      buildDuelQuestionRound(bank, 4, [], () => .37, "cycle"),
+      buildDuelQuestionRound(bank, 16, [], () => .37, "cycle"),
+      buildDuelQuestionRound(bank, 16, [], () => .37, "cycle"),
+      buildDuelQuestionRound(bank, 4, [], () => .37, "cycle")
+    ];
+
+    const firstCycleIds = rounds.flat().map((question) => question.id);
+    assert.equal(firstCycleIds.length, 40);
+    assert.equal(new Set(firstCycleIds).size, 40);
+
+    const lastRoundIds = new Set(rounds.at(-1).map((question) => question.id));
+    const nextCycleRound = buildDuelQuestionRound(bank, 4, [], () => .37, "cycle");
+    assert.equal(nextCycleRound.some((question) => lastRoundIds.has(question.id)), false);
+  });
+});
+
+test("v1.8 registra no histórico as perguntas jogadas pelo convidado", () => {
+  withMemoryLocalStorage(() => {
+    const bank = questionBank(24);
+    const played = bank.slice(0, 4);
+
+    assert.equal(getConfiguredDuelQuestionCount({
+      questionCount: 4,
+      roundConfigured: true,
+      status: "playing",
+      questions: played
+    }), 4);
+
+    const nextRound = buildDuelQuestionRound(bank, 4, [], () => .5, "guest");
+    const playedIds = new Set(played.map((question) => question.id));
+    assert.equal(nextRound.some((question) => playedIds.has(question.id)), false);
+  });
 });
 
 test("mais acertos vence", () => {
