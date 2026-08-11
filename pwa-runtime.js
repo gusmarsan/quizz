@@ -251,7 +251,7 @@ if ("serviceWorker" in navigator) {
         watchServiceWorkerUpdates(registration);
         return registration.update();
       })
-      .catch((error) => console.warn("PWA: service worker não pôôde ser registrado.", error));
+      .catch((error) => console.warn("PWA: service worker não pôde ser registrado.", error));
   });
 
   document.addEventListener("visibilitychange", () => {
