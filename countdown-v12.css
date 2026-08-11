@@ -100,11 +100,15 @@ body:has(#screen-countdown.active) #burrAppVersion {
 }
 
 #screen-countdown.active .countdown {
-  display: grid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: 1em;
+  min-block-size: 1em;
   min-width: min(60vw, 330px);
-  place-items: center;
+  margin: 0;
   color: var(--countdown-cream);
-  font: 900 clamp(7.5rem, 31vw, 14rem) / .78 var(--countdown-display);
+  font: 900 clamp(7.5rem, 31vw, 14rem) / 1 var(--countdown-display);
   letter-spacing: -.075em;
   text-indent: -.075em;
   text-shadow:
@@ -124,7 +128,7 @@ body:has(#screen-countdown.active) #burrAppVersion {
 
 #screen-countdown.active #countdownMessage {
   width: min(100%,20ch);
-  margin: clamp(24px, 4vh, 36px) auto 0;
+  margin: clamp(22px, 3.5vh, 32px) auto 0;
   color: var(--countdown-cream);
   font: 900 clamp(1.22rem, 5vw, 1.88rem) / 1.1 var(--countdown-display);
   letter-spacing: -.025em;
@@ -146,6 +150,7 @@ body:has(#screen-countdown.active) #burrAppVersion {
   #screen-countdown.active {
     border-radius: 24px;
     padding-inline: 20px;
+    padding-block-end: calc(clamp(34px, 8vw, 70px) + 10dvh);
   }
 
   #screen-countdown.active::before {
@@ -156,7 +161,6 @@ body:has(#screen-countdown.active) #burrAppVersion {
     margin-top: clamp(34px, 6vh, 54px);
   }
 
-  #screen-countdown.active > * { transform: translateY(-5dvh); }
 }
 
 @media (max-height: 720px) {
@@ -174,7 +178,7 @@ body:has(#screen-countdown.active) #burrAppVersion {
   }
 
   #screen-countdown.active #countdownMessage {
-    margin-top: 18px;
+    margin-top: 16px;
     font-size: clamp(1.15rem, 4.8vw, 1.65rem);
   }
 
@@ -192,7 +196,6 @@ body:has(#screen-countdown.active) #burrAppVersion {
     overflow: visible;
   }
   #screen-countdown.active::before { top: 18px; font-size: 1.55rem; }
-  #screen-countdown.active > * { transform: none; }
   #screen-countdown.active .eyebrow { margin: 34px 0 9px; }
   #screen-countdown.active .countdown { min-width: min(48vw,260px); font-size: clamp(5.4rem,24vh,8rem); }
   #screen-countdown.active #countdownMessage { width: min(88vw,34ch); margin-top: 14px; font-size: clamp(1.05rem,4.2vw,1.45rem); }
