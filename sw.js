@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "burrquizzz-pwa-";
-const CACHE_REVISION = "question-bank-181";
+const CACHE_REVISION = "question-bank-181-dado";
 const RELEASE_VERSION = (() => {
   try {
     return new URL(self.location.href).searchParams.get("v") || "current";
@@ -47,6 +47,7 @@ const APP_SHELL = [
   versioned("./questions.js"),
   versioned("./duel-question-bank-v252.js"),
   versioned("./question-bank/batch-v181.js"),
+  "./question-bank/batch-v182-dado-dolabella.js?v=1.81-dado",
   "./firebase-config.js",
   versioned("./duel-rematch-v06.js"),
   "./assets/home/burrquizzz-pub-background.png",
@@ -125,8 +126,6 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith((async () => {
     try {
-      // Online always means fresh: bypass the browser HTTP cache as well as the
-      // Service Worker cache. The returned response refreshes the offline shell.
       const response = await fetch(request, { cache: "no-store" });
       if (response && response.ok) {
         const copy = response.clone();
