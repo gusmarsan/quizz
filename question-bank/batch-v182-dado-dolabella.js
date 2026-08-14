@@ -1,4 +1,4 @@
-// Burrquizzz v1.82 — 10 perguntas sobre Dado Dolabella
+// Burrquizzz v1.81 — lote adicional: 10 perguntas sobre Dado Dolabella
 export default [
   {
     "id": "v182-dd-0001",
