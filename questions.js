@@ -1,6 +1,6 @@
-// Burrquizzz v1.81 — banco curado e expandido.
-// Mantém os 1.000 itens-base e 100 visuais como fonte, adiciona 70 perguntas
-// editoriais e aplica a curadoria pedida antes de expor o banco ao jogo.
+// Burrquizzz v1.82 — banco curado e expandido.
+// Mantém os 1.000 itens-base e 100 visuais como fonte, adiciona os lotes editoriais
+// e aplica a curadoria antes de expor o banco ao jogo.
 
 import batch01 from "./question-bank/batch-01.js?v=2.4.0";
 import batch02 from "./question-bank/batch-02.js?v=2.4.0";
@@ -25,6 +25,7 @@ import batch18b from "./question-bank/batch-18b.js?v=2.4.0";
 import batch19 from "./question-bank/batch-19.js?v=2.4.0";
 import batch20 from "./question-bank/batch-20.js?v=2.4.0";
 import v181Questions from "./question-bank/batch-v181.js?v=1.81";
+import v182DadoDolabellaQuestions from "./question-bank/batch-v182-dado-dolabella.js?v=1.82";
 import visualQuestions from "./question-bank/visual-batch.js?v=2.5.1";
 
 const BASE_QUESTIONS = [
@@ -96,7 +97,6 @@ function normalizeAnswerCapitalization(question) {
     normalized.rightItems = question.rightItems.map(capitalizeAnswerItem);
   }
 
-  // Em match_columns, matches precisa continuar idêntico a rightItems.
   if (Array.isArray(question?.matches)) {
     normalized.matches = question.matches.map(capitalizeAnswerItem);
   }
@@ -144,7 +144,6 @@ function applyEditorialPolicy(question) {
   return isCuriousComicQuestion(question) && isGenericGameQuestion(question);
 }
 
-// As 10 perguntas visuais antigas usavam SVGs provisórios e foram substituídas pelo novo acervo.
 const BASE_WITHOUT_LEGACY_IMAGES = BASE_QUESTIONS.filter(
   (question) => question.type !== "image_choice"
 );
@@ -157,6 +156,10 @@ const CURATED_V181 = v181Questions
   .filter(applyEditorialPolicy)
   .map(prepareQuestion);
 
+const CURATED_V182_DADO = v182DadoDolabellaQuestions
+  .filter(applyEditorialPolicy)
+  .map(prepareQuestion);
+
 const CURATED_VISUALS = visualQuestions
   .filter(applyEditorialPolicy)
   .map(prepareQuestion);
@@ -164,6 +167,7 @@ const CURATED_VISUALS = visualQuestions
 export const QUESTIONS = [
   ...CURATED_BASE,
   ...CURATED_V181,
+  ...CURATED_V182_DADO,
   ...CURATED_VISUALS
 ];
 
@@ -177,6 +181,10 @@ if (visualQuestions.length !== 100) {
 
 if (v181Questions.length !== 70) {
   throw new Error(`Lote v1.81 incompleto: ${v181Questions.length}/70.`);
+}
+
+if (v182DadoDolabellaQuestions.length !== 10) {
+  throw new Error(`Lote Dado Dolabella incompleto: ${v182DadoDolabellaQuestions.length}/10.`);
 }
 
 const v181CategoryCounts = CURATED_V181.reduce((counts, question) => {
@@ -223,15 +231,15 @@ if (lowerCaseAnswer) {
 }
 
 if (typeof window !== "undefined") {
-  window.BURRQUIZZZ_VERSION = "1.81";
+  window.BURRQUIZZZ_VERSION = "1.82";
 }
 
 if (typeof document !== "undefined") {
   Promise.resolve().then(() => {
     const badge = document.querySelector("#burrAppVersion");
     if (!badge) return;
-    badge.textContent = "v1.81";
-    badge.title = "Burrquizzz versão 1.81";
-    badge.setAttribute("aria-label", "Versão 1.81");
+    badge.textContent = "v1.82";
+    badge.title = "Burrquizzz versão 1.82";
+    badge.setAttribute("aria-label", "Versão 1.82");
   });
 }
