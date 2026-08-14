@@ -24,6 +24,10 @@ import {
   isDuelRoundConfigured,
   isValidDuelQuestionCount
 } from "./duel-round-rules-v17.js?v=1.7";
+import {
+  getResponseTimeSeconds,
+  getDuelResponseTimeMs
+} from "./settings-v19.js?v=1.9";
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCtZKE8YL2xC0hj0eWWrtGsuYCLEleLjoQ",
@@ -38,7 +42,7 @@ const ROOM_COLLECTION = "battleshipRooms";
 const GAME_TYPE = "burrquizzz";
 const NAME_STORAGE_KEY = "quizDuelPlayerName";
 const RECENT_QUESTIONS_STORAGE_KEY = "quizDuelRecentQuestionIdsV1";
-const QUESTION_MS = 30000;
+let QUESTION_MS = 20000;
 const FEEDBACK_MS = 2600;
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
@@ -86,7 +90,7 @@ function hideTechnicalSetup() {
   const title = $("#onlineModeButton .mode-title");
   const copy = $("#onlineModeButton .mode-copy");
   if (title) title.textContent = "Jogar em dupla";
-  if (copy) copy.textContent = "30 segundos por pergunta ou resultado assim que os dois responderem.";
+  if (copy) copy.textContent = `${getResponseTimeSeconds()} segundos por pergunta ou resultado assim que os dois responderem.`;
 }
 
 function interceptOnlineFlow() {
@@ -241,6 +245,7 @@ async function createRoom() {
       duelMode: null,
       questionCount: null,
       roundConfigured: false,
+      responseTimeSeconds: getResponseTimeSeconds(),
       questions: [],
       answers: {},
       rematchRequests: {}
@@ -311,6 +316,7 @@ function connectRoom(code, nextRole) {
     }
 
     roomData = snapshot.data();
+    QUESTION_MS = getDuelResponseTimeMs(roomData);
     transitionPending = false;
 
     const roundConfigured = isDuelRoundConfigured(roomData);
@@ -411,6 +417,7 @@ async function configureRound(questionCount) {
         duelMode: duelModeForCount(questionCount),
         questionCount,
         roundConfigured: true,
+        responseTimeSeconds: getResponseTimeSeconds(),
         questions: selected,
         answers: {},
         rematchRequests: {}
@@ -508,7 +515,7 @@ async function startOnlineGame() {
 
 function runCountdown(startAt) {
   showScreen("screen-countdown");
-  $("#countdownMessage").textContent = "30 segundos ou até os dois responderem.";
+  $("#countdownMessage").textContent = `${Math.round(QUESTION_MS / 1000)} segundos ou até os dois responderem.`;
 
   return new Promise((resolve) => {
     const tick = () => {

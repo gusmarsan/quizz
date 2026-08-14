@@ -5,7 +5,7 @@
 (() => {
   // A versão canônica não depende mais da query string do index. Isso permite
   // publicar hotfixes como 1.81 sem deixar um HTML antigo preso em loop de update.
-  const bundledVersion = "1.81";
+  const bundledVersion = "1.9";
 
   const root = document.documentElement;
   const VERSION_STORAGE_KEY = "burrquizzz-installed-version";

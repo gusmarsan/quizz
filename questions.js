@@ -231,15 +231,15 @@ if (lowerCaseAnswer) {
 }
 
 if (typeof window !== "undefined") {
-  window.BURRQUIZZZ_VERSION = "1.81";
+  window.BURRQUIZZZ_VERSION = "1.9";
 }
 
 if (typeof document !== "undefined") {
   Promise.resolve().then(() => {
     const badge = document.querySelector("#burrAppVersion");
     if (!badge) return;
-    badge.textContent = "v1.81";
-    badge.title = "Burrquizzz versão 1.81";
-    badge.setAttribute("aria-label", "Versão 1.81");
+    badge.textContent = "v1.9";
+    badge.title = "Burrquizzz versão 1.9";
+    badge.setAttribute("aria-label", "Versão 1.9");
   });
 }

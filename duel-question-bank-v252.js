@@ -1,4 +1,4 @@
-import { QUESTIONS as DUEL_SOURCE_QUESTIONS } from "./questions.js?duel-bank=1.81";
+import { QUESTIONS as DUEL_SOURCE_QUESTIONS } from "./questions.js?duel-bank=1.9";
 
 // Banco exclusivo do modo em dupla.
 // A query string força uma instância separada de questions.js, portanto o duelo

@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "burrquizzz-pwa-";
-const CACHE_REVISION = "question-bank-181-dado";
+const CACHE_REVISION = "settings-19";
 const RELEASE_VERSION = (() => {
   try {
     return new URL(self.location.href).searchParams.get("v") || "current";
@@ -38,6 +38,8 @@ const APP_SHELL = [
   versioned("./avatar-profile-v114.css"),
   versioned("./avatar-profile-v114.js"),
   versioned("./app.js"),
+  versioned("./settings-v19.js"),
+  versioned("./settings-v19.css"),
   versioned("./online-runtime-v231.js"),
   versioned("./duel-results-v061.js"),
   versioned("./duel-round-rules-v17.js"),

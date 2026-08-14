@@ -14,11 +14,11 @@ import {
   getConfiguredDuelQuestionCount,
   getDuelResultAction
 } from "./duel-round-rules-v17.js?v=1.7";
+import { getDuelResponseTimeMs } from "./settings-v19.js?v=1.9";
 
 const FIREBASE_APP_NAME = "burrquizzz-online-v231";
 const ROOM_COLLECTION = "battleshipRooms";
 const GAME_TYPE = "burrquizzz";
-const QUESTION_MS = 30000;
 const REMATCH_COUNTDOWN_MS = 4200;
 
 let watchedCode = "";
@@ -97,7 +97,7 @@ function renderRematchState(data, uid) {
     return;
   }
 
-  const outcome = calculateDuelOutcome(data, QUESTION_MS);
+  const outcome = calculateDuelOutcome(data, getDuelResponseTimeMs(data));
   if (!outcome || !outcome.results.some((result) => result.uid === uid)) return;
   const requests = data.rematchRequests || {};
   const action = getDuelResultAction(outcome, requests, uid);
@@ -153,7 +153,7 @@ async function requestRematch() {
       const data = snapshot.data();
       if (data.gameType !== GAME_TYPE || data.status !== "finished") return;
 
-      const outcome = calculateDuelOutcome(data, QUESTION_MS);
+      const outcome = calculateDuelOutcome(data, getDuelResponseTimeMs(data));
       if (!outcome || !outcome.results.some((result) => result.uid === context.user.uid)) {
         throw new Error("Esta revanche não está disponível.");
       }

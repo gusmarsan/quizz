@@ -1,11 +1,19 @@
 import { DEFAULT_FIREBASE_CONFIG } from "./firebase-config.js";
 import { QUESTIONS } from "./questions.js";
+import { getResponseTimeMs } from "./settings-v19.js?v=1.9";
 
-const QUESTION_MS = 18000;
+let QUESTION_MS = getResponseTimeMs();
 const FEEDBACK_MS = 2200;
-const ROUND_MS = QUESTION_MS + FEEDBACK_MS;
+let ROUND_MS = QUESTION_MS + FEEDBACK_MS;
 const FIREBASE_STORAGE_KEY = "quizDuelFirebaseConfig";
 const NAME_STORAGE_KEY = "quizDuelPlayerName";
+
+window.addEventListener("burrquizzz:response-time-change", (event) => {
+  const nextMs = Number(event.detail?.ms);
+  if (![20000, 25000, 30000].includes(nextMs)) return;
+  QUESTION_MS = nextMs;
+  ROUND_MS = QUESTION_MS + FEEDBACK_MS;
+});
 
 const QUESTION_MAP = new Map(QUESTIONS.map((question) => [question.id, question]));
 
