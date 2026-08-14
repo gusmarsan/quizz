@@ -1,4 +1,4 @@
-// Burrquizzz v1.82 — banco curado e expandido.
+// Burrquizzz v1.81 — banco curado e expandido.
 // Mantém os 1.000 itens-base e 100 visuais como fonte, adiciona os lotes editoriais
 // e aplica a curadoria antes de expor o banco ao jogo.
 
@@ -25,7 +25,7 @@ import batch18b from "./question-bank/batch-18b.js?v=2.4.0";
 import batch19 from "./question-bank/batch-19.js?v=2.4.0";
 import batch20 from "./question-bank/batch-20.js?v=2.4.0";
 import v181Questions from "./question-bank/batch-v181.js?v=1.81";
-import v182DadoDolabellaQuestions from "./question-bank/batch-v182-dado-dolabella.js?v=1.82";
+import v181DadoDolabellaQuestions from "./question-bank/batch-v182-dado-dolabella.js?v=1.81-dado";
 import visualQuestions from "./question-bank/visual-batch.js?v=2.5.1";
 
 const BASE_QUESTIONS = [
@@ -156,7 +156,7 @@ const CURATED_V181 = v181Questions
   .filter(applyEditorialPolicy)
   .map(prepareQuestion);
 
-const CURATED_V182_DADO = v182DadoDolabellaQuestions
+const CURATED_DADO = v181DadoDolabellaQuestions
   .filter(applyEditorialPolicy)
   .map(prepareQuestion);
 
@@ -167,7 +167,7 @@ const CURATED_VISUALS = visualQuestions
 export const QUESTIONS = [
   ...CURATED_BASE,
   ...CURATED_V181,
-  ...CURATED_V182_DADO,
+  ...CURATED_DADO,
   ...CURATED_VISUALS
 ];
 
@@ -183,8 +183,8 @@ if (v181Questions.length !== 70) {
   throw new Error(`Lote v1.81 incompleto: ${v181Questions.length}/70.`);
 }
 
-if (v182DadoDolabellaQuestions.length !== 10) {
-  throw new Error(`Lote Dado Dolabella incompleto: ${v182DadoDolabellaQuestions.length}/10.`);
+if (v181DadoDolabellaQuestions.length !== 10) {
+  throw new Error(`Lote Dado Dolabella incompleto: ${v181DadoDolabellaQuestions.length}/10.`);
 }
 
 const v181CategoryCounts = CURATED_V181.reduce((counts, question) => {
@@ -231,15 +231,15 @@ if (lowerCaseAnswer) {
 }
 
 if (typeof window !== "undefined") {
-  window.BURRQUIZZZ_VERSION = "1.82";
+  window.BURRQUIZZZ_VERSION = "1.81";
 }
 
 if (typeof document !== "undefined") {
   Promise.resolve().then(() => {
     const badge = document.querySelector("#burrAppVersion");
     if (!badge) return;
-    badge.textContent = "v1.82";
-    badge.title = "Burrquizzz versão 1.82";
-    badge.setAttribute("aria-label", "Versão 1.82");
+    badge.textContent = "v1.81";
+    badge.title = "Burrquizzz versão 1.81";
+    badge.setAttribute("aria-label", "Versão 1.81");
   });
 }
