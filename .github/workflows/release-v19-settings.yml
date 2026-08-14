@@ -1,0 +1,556 @@
+name: Release Burrquizzz v1.9 settings
+
+on:
+  push:
+    paths:
+      - .github/workflows/release-v19-settings.yml
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.event.head_commit.message == 'Bootstrap v1.9 settings release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create settings UI
+        shell: bash
+        run: |
+          cat > settings-v19.js <<'EOF'
+          const STORAGE_KEY = "burrquizzzResponseTimeSeconds";
+          export const RESPONSE_TIME_OPTIONS = Object.freeze([20, 25, 30]);
+          export const DEFAULT_RESPONSE_TIME_SECONDS = 20;
+
+          function normalizeSeconds(value, fallback = DEFAULT_RESPONSE_TIME_SECONDS) {
+            const seconds = Number(value);
+            return RESPONSE_TIME_OPTIONS.includes(seconds) ? seconds : fallback;
+          }
+
+          export function getResponseTimeSeconds() {
+            try {
+              return normalizeSeconds(localStorage.getItem(STORAGE_KEY));
+            } catch {
+              return DEFAULT_RESPONSE_TIME_SECONDS;
+            }
+          }
+
+          export function getResponseTimeMs() {
+            return getResponseTimeSeconds() * 1000;
+          }
+
+          export function getDuelResponseTimeSeconds(roomData) {
+            return normalizeSeconds(roomData?.responseTimeSeconds, DEFAULT_RESPONSE_TIME_SECONDS);
+          }
+
+          export function getDuelResponseTimeMs(roomData) {
+            return getDuelResponseTimeSeconds(roomData) * 1000;
+          }
+
+          export function setResponseTimeSeconds(value) {
+            const seconds = normalizeSeconds(value);
+            try {
+              localStorage.setItem(STORAGE_KEY, String(seconds));
+            } catch {
+              // O jogo continua com a escolha em memória nesta sessão.
+            }
+
+            window.dispatchEvent(new CustomEvent("burrquizzz:response-time-change", {
+              detail: { seconds, ms: seconds * 1000 }
+            }));
+            return seconds;
+          }
+
+          function ensureStylesheet() {
+            if (document.querySelector('link[data-burr-settings-v19]')) return;
+            const link = document.createElement("link");
+            link.rel = "stylesheet";
+            link.href = "./settings-v19.css?v=1.9";
+            link.dataset.burrSettingsV19 = "true";
+            document.head.appendChild(link);
+          }
+
+          function showOnlyScreen(screenId) {
+            document.querySelectorAll(".screen").forEach((screen) => {
+              screen.classList.toggle("active", screen.id === screenId);
+            });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+
+          function syncTimeOptions(root) {
+            const selected = getResponseTimeSeconds();
+            root.querySelectorAll("[data-response-time]").forEach((button) => {
+              const active = Number(button.dataset.responseTime) === selected;
+              button.classList.toggle("is-selected", active);
+              button.setAttribute("aria-checked", String(active));
+            });
+            const value = root.querySelector("#settingsTimeValue");
+            if (value) value.textContent = `${selected} segundos`;
+          }
+
+          export function mountSettingsUi() {
+            if (typeof document === "undefined" || !document.body) return;
+            if (document.querySelector("#screen-settings")) return;
+
+            ensureStylesheet();
+            const home = document.querySelector("#screen-home");
+            const shell = document.querySelector(".app-shell");
+            if (!home || !shell) return;
+
+            const gear = document.createElement("button");
+            gear.id = "homeSettingsButton";
+            gear.className = "home-settings-button";
+            gear.type = "button";
+            gear.setAttribute("aria-label", "Abrir configurações");
+            gear.title = "Configurações";
+            gear.innerHTML = `
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 8.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Z"/>
+                <path d="M19.15 13.7a7.9 7.9 0 0 0 .05-1.7 7.9 7.9 0 0 0-.05-1.7l2-1.55-1.9-3.3-2.35.95a8.1 8.1 0 0 0-2.95-1.7L13.6 2h-3.8l-.35 2.7A8.1 8.1 0 0 0 6.5 6.4l-2.35-.95-1.9 3.3 2 1.55A7.9 7.9 0 0 0 4.2 12c0 .58.02 1.15.05 1.7l-2 1.55 1.9 3.3 2.35-.95a8.1 8.1 0 0 0 2.95 1.7L9.8 22h3.8l.35-2.7a8.1 8.1 0 0 0 2.95-1.7l2.35.95 1.9-3.3-2-1.55Z"/>
+              </svg>`;
+            home.appendChild(gear);
+
+            const settings = document.createElement("section");
+            settings.id = "screen-settings";
+            settings.className = "screen settings-screen";
+            settings.setAttribute("aria-labelledby", "settingsTitle");
+            settings.innerHTML = `
+              <div class="settings-v19__ambient" aria-hidden="true"></div>
+              <div class="settings-v19__content">
+                <button id="settingsBackButton" class="back-link settings-v19__back" type="button">← Voltar</button>
+                <header class="settings-v19__header">
+                  <p class="eyebrow">Burrquizzz</p>
+                  <h2 id="settingsTitle">Configurações</h2>
+                  <p>Ajuste a partida do seu jeito.</p>
+                </header>
+
+                <article class="settings-v19__card">
+                  <div class="settings-v19__card-heading">
+                    <span class="settings-v19__card-icon" aria-hidden="true">⏱</span>
+                    <div>
+                      <h3>Tempo de resposta</h3>
+                      <p>Escolha quanto tempo cada pergunta fica disponível.</p>
+                    </div>
+                  </div>
+
+                  <div class="settings-time-options" role="radiogroup" aria-label="Tempo de resposta">
+                    <button class="settings-time-option" type="button" role="radio" data-response-time="20">
+                      <strong>20</strong><span>segundos</span>
+                    </button>
+                    <button class="settings-time-option" type="button" role="radio" data-response-time="25">
+                      <strong>25</strong><span>segundos</span>
+                    </button>
+                    <button class="settings-time-option" type="button" role="radio" data-response-time="30">
+                      <strong>30</strong><span>segundos</span>
+                    </button>
+                  </div>
+
+                  <div class="settings-v19__saved">
+                    <span>Selecionado</span>
+                    <strong id="settingsTimeValue">20 segundos</strong>
+                  </div>
+                  <p class="settings-v19__note">A escolha fica salva neste aparelho. No duelo online, vale o tempo definido por quem cria a sala.</p>
+                </article>
+              </div>`;
+            shell.appendChild(settings);
+
+            gear.addEventListener("click", () => {
+              syncTimeOptions(settings);
+              showOnlyScreen("screen-settings");
+            });
+
+            settings.querySelector("#settingsBackButton")?.addEventListener("click", () => {
+              showOnlyScreen("screen-home");
+            });
+
+            settings.querySelectorAll("[data-response-time]").forEach((button) => {
+              button.addEventListener("click", () => {
+                setResponseTimeSeconds(Number(button.dataset.responseTime));
+                syncTimeOptions(settings);
+              });
+            });
+
+            syncTimeOptions(settings);
+          }
+
+          if (typeof document !== "undefined") {
+            if (document.body) mountSettingsUi();
+            else document.addEventListener("DOMContentLoaded", mountSettingsUi, { once: true });
+          }
+          EOF
+
+          cat > settings-v19.css <<'EOF'
+          #screen-home { position: relative; }
+
+          .home-settings-button {
+            position: absolute;
+            top: max(18px, calc(env(safe-area-inset-top) + 12px));
+            right: 18px;
+            z-index: 45;
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            padding: 0;
+            border: 1px solid rgba(245, 240, 230, .22);
+            border-radius: 50%;
+            background: rgba(5, 20, 28, .48);
+            color: #f5f0e6;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .18);
+            backdrop-filter: blur(12px);
+            cursor: pointer;
+            transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+          }
+
+          .home-settings-button:hover,
+          .home-settings-button:focus-visible {
+            transform: translateY(-1px);
+            background: rgba(12, 37, 48, .72);
+            border-color: rgba(241, 196, 92, .55);
+          }
+
+          .home-settings-button svg {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.6;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+          }
+
+          .settings-screen {
+            position: relative;
+            min-height: 100dvh;
+            overflow: hidden auto;
+            padding: max(22px, calc(env(safe-area-inset-top) + 14px)) 18px calc(42px + env(safe-area-inset-bottom));
+            color: #f5f0e6;
+            background:
+              radial-gradient(circle at 82% 4%, rgba(209, 157, 56, .16), transparent 19rem),
+              radial-gradient(circle at 8% 42%, rgba(46, 103, 92, .16), transparent 23rem),
+              linear-gradient(160deg, #07141b 0%, #0b2028 52%, #08161d 100%);
+          }
+
+          .settings-v19__ambient {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: .22;
+            background-image: radial-gradient(rgba(255,255,255,.15) .7px, transparent .7px);
+            background-size: 18px 18px;
+            mask-image: linear-gradient(to bottom, #000, transparent 68%);
+          }
+
+          .settings-v19__content {
+            position: relative;
+            z-index: 1;
+            width: min(100%, 560px);
+            margin: 0 auto;
+          }
+
+          .settings-v19__back {
+            margin: 0 0 34px;
+            color: #dfd4c0;
+          }
+
+          .settings-v19__header { margin-bottom: 28px; }
+          .settings-v19__header .eyebrow { color: #e4b94f; }
+          .settings-v19__header h2 {
+            margin: 7px 0 7px;
+            font-family: "Fraunces", Georgia, serif;
+            font-size: clamp(2.1rem, 8vw, 3.2rem);
+            line-height: .98;
+            letter-spacing: -.035em;
+          }
+          .settings-v19__header > p:last-child {
+            margin: 0;
+            color: #c7bdad;
+            font-size: .96rem;
+          }
+
+          .settings-v19__card {
+            padding: 22px;
+            border: 1px solid rgba(245, 240, 230, .13);
+            border-radius: 24px;
+            background: linear-gradient(145deg, rgba(17, 43, 52, .92), rgba(7, 26, 34, .9));
+            box-shadow: 0 24px 52px rgba(0, 0, 0, .24), inset 0 1px rgba(255,255,255,.035);
+          }
+
+          .settings-v19__card-heading {
+            display: grid;
+            grid-template-columns: 42px 1fr;
+            gap: 13px;
+            align-items: center;
+          }
+
+          .settings-v19__card-icon {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 13px;
+            color: #e8bd56;
+            background: rgba(232, 189, 86, .1);
+            border: 1px solid rgba(232, 189, 86, .2);
+            font-size: 1.15rem;
+          }
+
+          .settings-v19__card h3 {
+            margin: 0 0 4px;
+            font-size: 1.05rem;
+            line-height: 1.2;
+          }
+
+          .settings-v19__card-heading p {
+            margin: 0;
+            color: #b9b2a7;
+            font-size: .82rem;
+            line-height: 1.45;
+          }
+
+          .settings-time-options {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 9px;
+            margin-top: 22px;
+          }
+
+          .settings-time-option {
+            min-height: 78px;
+            display: grid;
+            place-items: center;
+            align-content: center;
+            gap: 2px;
+            padding: 10px 6px;
+            border: 1px solid rgba(245, 240, 230, .14);
+            border-radius: 17px;
+            background: rgba(3, 17, 23, .4);
+            color: #eee6da;
+            cursor: pointer;
+            transition: transform 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+          }
+
+          .settings-time-option strong {
+            font-size: 1.45rem;
+            line-height: 1;
+            font-weight: 800;
+          }
+
+          .settings-time-option span {
+            color: #a9a399;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+          }
+
+          .settings-time-option:hover,
+          .settings-time-option:focus-visible { transform: translateY(-1px); }
+
+          .settings-time-option.is-selected {
+            border-color: rgba(237, 191, 82, .72);
+            background: linear-gradient(180deg, rgba(226, 169, 59, .2), rgba(226, 169, 59, .08));
+            color: #f6ce6b;
+            box-shadow: inset 0 0 0 1px rgba(237, 191, 82, .1), 0 9px 24px rgba(0,0,0,.12);
+          }
+
+          .settings-time-option.is-selected span { color: #dcc38a; }
+
+          .settings-v19__saved {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(245, 240, 230, .1);
+          }
+
+          .settings-v19__saved span {
+            color: #9f9b93;
+            font-size: .76rem;
+          }
+          .settings-v19__saved strong {
+            color: #f1c45c;
+            font-size: .82rem;
+          }
+
+          .settings-v19__note {
+            margin: 13px 0 0;
+            color: #8f948f;
+            font-size: .72rem;
+            line-height: 1.5;
+          }
+
+          @media (max-width: 520px) {
+            .home-settings-button {
+              top: max(13px, calc(env(safe-area-inset-top) + 9px));
+              right: 13px;
+              width: 38px;
+              height: 38px;
+            }
+            .home-settings-button svg { width: 18px; height: 18px; }
+            .settings-v19__card { padding: 19px 16px; border-radius: 21px; }
+            .settings-v19__header { margin-bottom: 22px; }
+            .settings-v19__back { margin-bottom: 27px; }
+            .settings-time-option { min-height: 72px; border-radius: 15px; }
+          }
+          EOF
+
+      - name: Patch game runtimes and release
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: esperado 1, encontrado {count}: {old!r}")
+              return text.replace(old, new, 1)
+
+          # Solo / runtime legado
+          path = Path("app.js")
+          text = path.read_text()
+          text = replace_once(
+              text,
+              'import { QUESTIONS } from "./questions.js";\n',
+              'import { QUESTIONS } from "./questions.js";\nimport { getResponseTimeMs } from "./settings-v19.js?v=1.9";\n',
+              "app import settings"
+          )
+          text = replace_once(text, 'const QUESTION_MS = 18000;', 'let QUESTION_MS = getResponseTimeMs();', "app default timer")
+          text = replace_once(text, 'const ROUND_MS = QUESTION_MS + FEEDBACK_MS;', 'let ROUND_MS = QUESTION_MS + FEEDBACK_MS;', "app round timer")
+          anchor = 'const NAME_STORAGE_KEY = "quizDuelPlayerName";\n'
+          listener = '''const NAME_STORAGE_KEY = "quizDuelPlayerName";\n\nwindow.addEventListener("burrquizzz:response-time-change", (event) => {\n  const nextMs = Number(event.detail?.ms);\n  if (![20000, 25000, 30000].includes(nextMs)) return;\n  QUESTION_MS = nextMs;\n  ROUND_MS = QUESTION_MS + FEEDBACK_MS;\n});\n'''
+          text = replace_once(text, anchor, listener, "app settings listener")
+          path.write_text(text)
+
+          # Duelo online atual
+          path = Path("online-runtime-v231.js")
+          text = path.read_text()
+          rules_import = '} from "./duel-round-rules-v17.js?v=1.7";\n'
+          settings_import = '} from "./duel-round-rules-v17.js?v=1.7";\nimport {\n  getResponseTimeSeconds,\n  getDuelResponseTimeMs\n} from "./settings-v19.js?v=1.9";\n'
+          text = replace_once(text, rules_import, settings_import, "online import settings")
+          text = replace_once(text, 'const QUESTION_MS = 30000;', 'let QUESTION_MS = 20000;', "online default timer")
+          text = replace_once(
+              text,
+              'if (copy) copy.textContent = "30 segundos por pergunta ou resultado assim que os dois responderem.";',
+              'if (copy) copy.textContent = `${getResponseTimeSeconds()} segundos por pergunta ou resultado assim que os dois responderem.`;',
+              "online home timer copy"
+          )
+          text = replace_once(
+              text,
+              '      roundConfigured: false,\n      questions: [],',
+              '      roundConfigured: false,\n      responseTimeSeconds: getResponseTimeSeconds(),\n      questions: [],',
+              "online room timer"
+          )
+          text = replace_once(
+              text,
+              '        roundConfigured: true,\n        questions: selected,',
+              '        roundConfigured: true,\n        responseTimeSeconds: getResponseTimeSeconds(),\n        questions: selected,',
+              "online configured timer"
+          )
+          text = replace_once(
+              text,
+              '    roomData = snapshot.data();\n    transitionPending = false;',
+              '    roomData = snapshot.data();\n    QUESTION_MS = getDuelResponseTimeMs(roomData);\n    transitionPending = false;',
+              "online sync room timer"
+          )
+          text = replace_once(
+              text,
+              '$("#countdownMessage").textContent = "30 segundos ou até os dois responderem.";',
+              '$("#countdownMessage").textContent = `${Math.round(QUESTION_MS / 1000)} segundos ou até os dois responderem.`;',
+              "online countdown copy"
+          )
+          path.write_text(text)
+
+          # Revanche usa o mesmo tempo salvo na sala
+          path = Path("duel-rematch-v06.js")
+          text = path.read_text()
+          rules_import = '} from "./duel-round-rules-v17.js?v=1.7";\n'
+          settings_import = '} from "./duel-round-rules-v17.js?v=1.7";\nimport { getDuelResponseTimeMs } from "./settings-v19.js?v=1.9";\n'
+          text = replace_once(text, rules_import, settings_import, "rematch import settings")
+          text = replace_once(text, 'const QUESTION_MS = 30000;\n', '', "rematch old timer")
+          occurrences = text.count('calculateDuelOutcome(data, QUESTION_MS)')
+          if occurrences != 2:
+              raise SystemExit(f"rematch outcome timer: esperado 2, encontrado {occurrences}")
+          text = text.replace('calculateDuelOutcome(data, QUESTION_MS)', 'calculateDuelOutcome(data, getDuelResponseTimeMs(data))')
+          path.write_text(text)
+
+          # Versão visível / cache busting do HTML
+          path = Path("index.html")
+          text = path.read_text()
+          text = text.replace('?v=1.8', '?v=1.9')
+          text = text.replace('versão 1.8', 'versão 1.9').replace('Versão 1.8', 'Versão 1.9').replace('>v1.8<', '>v1.9<')
+          path.write_text(text)
+
+          # Questions também expõe a versão no badge/runtime
+          path = Path("questions.js")
+          text = path.read_text()
+          text = text.replace('window.BURRQUIZZZ_VERSION = "1.81";', 'window.BURRQUIZZZ_VERSION = "1.9";')
+          text = text.replace('badge.textContent = "v1.81";', 'badge.textContent = "v1.9";')
+          text = text.replace('badge.title = "Burrquizzz versão 1.81";', 'badge.title = "Burrquizzz versão 1.9";')
+          text = text.replace('badge.setAttribute("aria-label", "Versão 1.81");', 'badge.setAttribute("aria-label", "Versão 1.9");')
+          path.write_text(text)
+
+          # Banco do duelo aponta para a release nova
+          path = Path("duel-question-bank-v252.js")
+          text = path.read_text().replace('./questions.js?duel-bank=1.81', './questions.js?duel-bank=1.9')
+          path.write_text(text)
+
+          # Release gate
+          path = Path("release-gate.js")
+          text = path.read_text()
+          text = replace_once(text, 'const bundledVersion = "1.81";', 'const bundledVersion = "1.9";', "release gate")
+          path.write_text(text)
+
+          # Service worker
+          path = Path("sw.js")
+          text = path.read_text()
+          text = replace_once(text, 'const CACHE_REVISION = "question-bank-181-dado";', 'const CACHE_REVISION = "settings-19";', "service worker revision")
+          text = replace_once(
+              text,
+              '  versioned("./app.js"),\n',
+              '  versioned("./app.js"),\n  versioned("./settings-v19.js"),\n  versioned("./settings-v19.css"),\n',
+              "service worker settings files"
+          )
+          path.write_text(text)
+
+          Path("version.json").write_text(json.dumps({"version": "1.9"}, ensure_ascii=False, indent=2) + "\n")
+          PY
+
+      - name: Validate v1.9
+        shell: bash
+        run: |
+          node --check app.js
+          node --check online-runtime-v231.js
+          node --check duel-rematch-v06.js
+          node --check settings-v19.js
+          node --check questions.js
+          node --check release-gate.js
+          node --check sw.js
+          node --test tests/duel-round-rules-v17.test.mjs
+          node --input-type=module - <<'NODE'
+          const settings = await import('./settings-v19.js');
+          if (settings.DEFAULT_RESPONSE_TIME_SECONDS !== 20) throw new Error('Default precisa ser 20s');
+          if (settings.getDuelResponseTimeMs({ responseTimeSeconds: 25 }) !== 25000) throw new Error('25s inválido');
+          if (settings.getDuelResponseTimeMs({ responseTimeSeconds: 30 }) !== 30000) throw new Error('30s inválido');
+          if (settings.getDuelResponseTimeMs({}) !== 20000) throw new Error('Fallback do duelo precisa ser 20s');
+          NODE
+          grep -q 'let QUESTION_MS = getResponseTimeMs();' app.js
+          grep -q 'responseTimeSeconds: getResponseTimeSeconds()' online-runtime-v231.js
+          grep -q 'const bundledVersion = "1.9"' release-gate.js
+          grep -q '"version": "1.9"' version.json
+
+      - name: Commit v1.9
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js online-runtime-v231.js duel-rematch-v06.js settings-v19.js settings-v19.css index.html questions.js duel-question-bank-v252.js release-gate.js sw.js version.json
+          git commit -m "Release Burrquizzz v1.9 settings"
+          git push
